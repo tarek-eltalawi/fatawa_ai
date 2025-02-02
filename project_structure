@@ -1,0 +1,7 @@
+rag_system/
+├── config.py
+├── pinecone_manager.py
+├── ingest.py
+├── query.py
+├── requirements.txt
+└── README.md 

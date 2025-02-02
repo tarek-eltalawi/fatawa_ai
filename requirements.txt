@@ -1,0 +1,6 @@
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-pinecone>=0.0.1
+pinecone-client>=2.2.4
+python-dotenv>=1.0.0
+sentence-transformers>=2.2.2 

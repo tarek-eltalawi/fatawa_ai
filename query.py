@@ -1,4 +1,5 @@
 import warnings
+from QA_langgraph import ask_bot
 from agents.islamic_agent import create_islamic_agent
 
 # Suppress all LangChain warnings
@@ -30,7 +31,8 @@ if __name__ == "__main__":
                 # Get response
                 print("\nSearching for answer...")
                 print("Invoking agent with question:", question)
-                response = agent.invoke({"input": question})
+                # response = agent.invoke({"input": question})
+                response = ask_bot(question)
                 print("\nAgent response received")
                 if isinstance(response, dict):
                     print(response.get('output', 'No response generated'))

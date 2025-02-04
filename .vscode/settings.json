@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": [
-        "./src/react_agent"
+        "./src/react_agent",
+        "./langchain_example"
     ]
 }

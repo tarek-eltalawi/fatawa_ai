@@ -1,17 +1,21 @@
-from typing import Any, Dict, List
+from typing import Annotated, Any, Dict, List, Literal, Sequence
 from dataclasses import dataclass, field
 from langchain_ollama import ChatOllama
-from config import MODEL_NAME, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
+from langgraph.prebuilt import ToolNode
+from langchain_core.messages import AnyMessage
+from langgraph.graph import add_messages
 
-from react_agent.pinecone_manager import PineconeManager
-from react_agent.tools import TOOLS
+from src.langchain_example.config import MODEL_NAME, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
+from src.langchain_example.pinecone_manager import PineconeManager
+from src.langchain_example.tools import TOOLS
 
 
 @dataclass
 class State:
     question: str = field(default_factory=str)
+    messages: Annotated[Sequence[AnyMessage], add_messages] = field(default_factory=list)
     context: str = field(default_factory=str)
     sources: List[str] = field(default_factory=list)
     response: str = field(default_factory=str)
@@ -39,23 +43,38 @@ def model_node(state: State) -> Dict[str, Any]:
     llm = ChatOllama(model=MODEL_NAME, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     llm.bind_tools(TOOLS)
     prompt_template = PromptTemplate(
-        template="Using the following context, answer the question:\nContext: {context}\nQuestion: {question}\nAnswer:",
+        template="""
+        Using the following context, answer the question:\nContext: {context}\nQuestion: {question}\nAnswer:
+
+        if the user asks to translate the answer to Arabic, use the translate tool to translate the answer to Arabic.
+        """,
         input_variables=["context", "question"]
     )
     prompt = prompt_template.format(context=state.context, question=state.question)
     response = llm.invoke(prompt)
     return {
-        "response": response
+        "response": response,
+        "messages": [response]
     }
+
+def route_model_output(state: State) -> Literal["__end__", "tools"]:
+    last_message = state.messages[-1]
+    # If there is no tool call, then we finish
+    if not last_message.tool_calls:
+        return "__end__"
+    # Otherwise we execute the requested actions
+    return "tools"
 
 def ask_bot(question: str):
     # Build the state graph.
     graph_builder = StateGraph(State)
     graph_builder.add_node("retrieval", retrieval_node)
     graph_builder.add_node("answer", model_node)
+    graph_builder.add_node("tools", ToolNode(TOOLS))
     graph_builder.add_edge(START, "retrieval")
     graph_builder.add_edge("retrieval", "answer")
-    graph_builder.add_edge("answer", END)
+    graph_builder.add_conditional_edges("answer", route_model_output)
+    graph_builder.add_edge("tools", "answer")
     graph = graph_builder.compile()
 
     # Define the initial state.

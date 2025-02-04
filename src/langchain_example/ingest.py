@@ -78,4 +78,4 @@ class DocumentIngester:
 if __name__ == "__main__":
     # Example usage with namespace
     ingester = DocumentIngester(namespace="my_documents")
-    ingester.ingest_documents("./documents") 
+    ingester.ingest_documents("../documents") 

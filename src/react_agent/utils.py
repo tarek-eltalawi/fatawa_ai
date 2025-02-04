@@ -4,7 +4,7 @@ from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
 from langchain_ollama import ChatOllama
-from react_agent.configuration import Configuration
+from configuration import Configuration
 
 def get_message_text(msg: BaseMessage) -> str:
     """Get the text content of a message."""

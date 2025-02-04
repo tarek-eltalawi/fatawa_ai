@@ -1,6 +1,5 @@
 import warnings
-from QA_langgraph import ask_bot
-from agents.islamic_agent import create_islamic_agent
+from src.langchain_example.QA_langgraph import ask_bot
 
 # Suppress all LangChain warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='langchain')
@@ -9,7 +8,6 @@ if __name__ == "__main__":
     try:
         print("\nStarting Islamic Fatwa Assistant...")
         # Initialize the query engine
-        agent = create_islamic_agent()
         print("Agent created successfully")
         print("\nIslamic Fatwa Assistant (Press Ctrl+C to exit)")
         print("----------------------------------------")
@@ -31,7 +29,6 @@ if __name__ == "__main__":
                 # Get response
                 print("\nSearching for answer...")
                 print("Invoking agent with question:", question)
-                # response = agent.invoke({"input": question})
                 response = ask_bot(question)
                 print("\nAgent response received")
                 if isinstance(response, dict):

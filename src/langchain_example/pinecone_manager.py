@@ -3,8 +3,9 @@ from typing import Optional
 from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Pinecone as PineconeVectorStore
 from pinecone import Pinecone
-from configuration import Configuration
 from langchain_core.runnables import RunnableConfig
+
+from src.langchain_example.configuration import Configuration
 
 class PineconeManager:
     def __init__(self, namespace: str = "default", config: Optional[RunnableConfig] = None):

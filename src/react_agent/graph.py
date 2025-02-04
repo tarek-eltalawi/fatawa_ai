@@ -12,10 +12,10 @@ from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode
 
 from react_agent.configuration import Configuration
-from src.react_agent.pinecone_manager import PineconeManager
-from src.react_agent.state import InputState, State
-from src.react_agent.tools import TOOLS
-from src.react_agent.utils import get_message_text, load_chat_model
+from react_agent.pinecone_manager import PineconeManager
+from react_agent.state import InputState, State
+from react_agent.tools import TOOLS
+from react_agent.utils import get_message_text, load_chat_model
 
 # Define the function that calls the model
 

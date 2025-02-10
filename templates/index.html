@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dar Al-Ifta Q&A System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Add marked.js for markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Dar Al-Ifta Q&A System</h1>
+            <p class="subtitle">Ask questions about Islamic rulings and get answers from authentic sources</p>
+        </header>
+        
+        <main>
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Messages will be inserted here -->
+                </div>
+                
+                <form id="question-form" class="question-form">
+                    <div class="input-group">
+                        <textarea 
+                            id="question-input" 
+                            placeholder="Type your question here..."
+                            rows="3"
+                        ></textarea>
+                        <button type="submit" class="submit-btn">
+                            Ask Question
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Powered by Dar Al-Ifta's Fatwa Database</p>
+        </footer>
+    </div>
+
+    <script>
+        // Configure marked.js to open links in new tab
+        marked.setOptions({
+            breaks: true,
+            gfm: true
+        });
+
+        document.getElementById('question-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const questionInput = document.getElementById('question-input');
+            const question = questionInput.value.trim();
+            
+            if (!question) return;
+            
+            // Add user question to chat
+            addMessage('user', question);
+            
+            // Clear input
+            questionInput.value = '';
+            
+            try {
+                // Show loading state
+                addMessage('system', 'Thinking...');
+                
+                // Send question to backend
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question }),
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading message
+                removeLastMessage();
+                
+                // Add response to chat
+                addMessage('assistant', data.answer);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                removeLastMessage();
+                addMessage('system', 'Sorry, there was an error processing your question.');
+            }
+        });
+
+        function addMessage(role, content) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            
+            // Format the content if it contains "Sources:"
+            if (content.includes('Sources:')) {
+                const [answer, sources] = content.split('Sources:');
+                messageDiv.innerHTML = `
+                    <div class="answer-content">${marked.parse(answer.trim())}</div>
+                    <div class="sources">
+                        <strong>Sources:</strong>
+                        ${marked.parse(sources)}
+                    </div>
+                `;
+            } else {
+                messageDiv.innerHTML = role === 'user' ? 
+                    `<p>${content}</p>` : 
+                    `<div class="answer-content">${marked.parse(content)}</div>`;
+            }
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function removeLastMessage() {
+            const messagesDiv = document.getElementById('chat-messages');
+            const lastMessage = messagesDiv.lastElementChild;
+            if (lastMessage) {
+                messagesDiv.removeChild(lastMessage);
+            }
+        }
+    </script>
+</body>
+</html> 

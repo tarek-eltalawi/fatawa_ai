@@ -1,7 +1,11 @@
-rag_system/
+fatawa/
+├── documents/
+│   └── fatawa.txt
 ├── config.py
 ├── pinecone_manager.py
 ├── ingest.py
 ├── query.py
+├── service.py
+├── tools.py
 ├── requirements.txt
 └── README.md 

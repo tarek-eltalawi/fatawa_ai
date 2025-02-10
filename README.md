@@ -40,14 +40,6 @@ python query.py
 
 ## Upcoming Features
 
-should we have one node with multiple tools or multiple nodes?
-maybe 1 node for dar al iftaa then another for sources?
-only execute the source node if the dar al iftaa node doesn't have the answer or if the user asks for more sources.
-
-[x] UNDERSTAND LANGCHAIN + AGENTIC AI AND APPLY IT TO THIS PROJECT.
-[ ] ADD MULTIPLE OTHER DOCUMENTS TO THE DATABASE AND UNDERSTAND HOW TO MAKE THE SYSTEM UNDERSTAND THE DIFFERENT DOCUMENTS.
-    THIS INCLUDES UNDERSTANDING THE DIFFERENT METADATA, PROVIDE DIFFERENT SOURCES .. ETC.
-
 #### Tools:
 - [x] Translation tool
 - [ ] Web search tool
@@ -61,6 +53,7 @@ only execute the source node if the dar al iftaa node doesn't have the answer or
 
 ### High Priority
 - [ ] Web interface for easier interaction
+- [ ] Add more documents to the database (e.g: Hadith, History, etc.)
 - [ ] Support for multiple languages (Arabic, Urdu, etc.)
 - [ ] Question classification to improve retrieval accuracy
 - [ ] Streaming responses for faster feedback

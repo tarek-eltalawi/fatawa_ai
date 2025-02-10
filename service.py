@@ -30,7 +30,7 @@ def retrieval_node(state: State) -> Dict[str, Any]:
     # Combine the content of retrieved docs into a single string.
     context = "\n".join(doc.page_content for doc in retrieved_docs)
     sources = set(
-        doc.metadata.get('source', 'No source available')
+        "https://www.dar-alifta.org" + doc.metadata.get('source', 'No source available')
         for doc in retrieved_docs
     )
     return {

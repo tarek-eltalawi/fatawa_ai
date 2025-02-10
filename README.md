@@ -7,36 +7,65 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about Islam
 - Semantic search using Pinecone vector store
 - Document ingestion with metadata preservation
 - Deduplication of sources
-- Interactive CLI interface
+- Modern web interface for easy interaction
+- Markdown rendering for formatted answers
+- Source linking to original fatwas
 
 ## Setup
-1. Install dependencies:
+1. Create and activate a virtual environment (recommended):
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows use: .venv\Scripts\activate
+```
+
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Configure environment variables in `.env`:
+3. Configure environment variables in `.env`:
 ```env
 PINECONE_API_KEY=your_api_key
 PINECONE_ENVIRONMENT=your_environment
 PINECONE_INDEX_NAME=your_index_name
 ```
 
-3. Run Ollama locally with the qwen2.5 model:
+4. Run Ollama locally with the qwen2.5 model:
 ```bash
 ollama run qwen2.5:7b
 ```
 
 ## Usage
-1. First ingest documents:
-```bash
-python ingest.py
-```
 
-2. Then run the query interface:
+### Running the Application
+You can use either the CLI or web interface:
+
+#### Web Interface (Recommended)
+1. Start the Flask server:
+```bash
+flask run
+```
+2. Open your browser and navigate to: http://127.0.0.1:5000
+3. Start asking questions in the web interface
+
+#### CLI Interface
+Run the query interface in terminal:
 ```bash
 python query.py
 ```
+
+## Troubleshooting
+
+### Common Issues
+1. **Import errors**: Make sure you have activated the virtual environment and installed all dependencies
+2. **Flask not found**: Verify Flask is installed with `pip install flask flask-cors`
+3. **Ollama connection error**: Ensure Ollama is running with the qwen2.5 model
+4. **Pinecone errors**: Check your environment variables are set correctly
+
+### Environment Setup
+- Python 3.8 or higher is required
+- Make sure all environment variables in `.env` are set
+- The web interface requires a modern browser with JavaScript enabled
 
 ## Upcoming Features
 
@@ -46,14 +75,9 @@ python query.py
 - [ ] Image search tool
 - [ ] File search tool
 
-#### Memory:
-- [ ] Conversation history
-- [ ] Contextual memory
-- [ ] Long term memory
-
 ### High Priority
-- [ ] Web interface for easier interaction
-- [ ] Add more documents to the database (e.g: Hadith, History, etc.)
+- [x] Web interface for easier interaction
+- [ ] Support for conversation history
 - [ ] Support for multiple languages (Arabic, Urdu, etc.)
 - [ ] Question classification to improve retrieval accuracy
 - [ ] Streaming responses for faster feedback
@@ -67,7 +91,7 @@ python query.py
 - [ ] Better error handling and recovery
 
 ### Future Enhancements
-- [ ] Support for conversation history
+- [ ] Add more documents to the database (e.g: Hadith, History, etc.)
 - [ ] Automated testing suite
 - [ ] Documentation improvements
 - [ ] User feedback collection

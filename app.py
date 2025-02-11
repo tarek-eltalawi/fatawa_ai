@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from service import ask_bot
+from service import ask_bot, memory
 
 app = Flask(__name__)
 CORS(app)
@@ -21,8 +21,20 @@ def ask():
         # Get answer from the Q&A system
         answer = ask_bot(question)
         
-        return jsonify({'answer': answer})
+        # Return both answer and conversation history
+        return jsonify({
+            'answer': answer,
+            'history': memory.to_dict()
+        })
     
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/clear-history', methods=['POST'])
+def clear_history():
+    try:
+        memory.clear()
+        return jsonify({'message': 'Conversation history cleared'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

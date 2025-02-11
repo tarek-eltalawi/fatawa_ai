@@ -11,7 +11,10 @@ PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME")
 
 # Ollama Configuration
 OLLAMA_BASE_URL = "http://localhost:11434"
-MODEL_NAME = "qwen2.5:7b"
+QWEN_MODEL = "qwen2.5:7b"
+JAIS_MODEL = "jwnder/jais-adaptive:7b"
+# MODEL_NAME = "qwen2.5:7b"
+# MODEL_NAME = "jwnder/jais-adaptive:7b"
 TEMPERATURE = 0.1
 
 # Vector Dimensions for embeddings

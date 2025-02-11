@@ -7,10 +7,14 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
 
-from config import MODEL_NAME, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
+from config import JAIS_MODEL, QWEN_MODEL, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
 from pinecone_manager import PineconeManager
-from tools import TOOLS
+from tools import TOOLS, detect_language
+from memory import ConversationMemory
+from prompts import JAIS_PROMPT, QWEN_PROMPT
 
+# Initialize conversation memory
+memory = ConversationMemory(max_messages=10)
 
 @dataclass
 class State:
@@ -19,7 +23,8 @@ class State:
     context: str = field(default_factory=str)
     sources: List[str] = field(default_factory=list)
     response: str = field(default_factory=str)
-
+    history: str = field(default_factory=str)
+    language: str = field(default_factory=str)
 
 # Retrieval node: adds a "context" key based on the question.
 def retrieval_node(state: State) -> Dict[str, Any]:
@@ -40,18 +45,27 @@ def retrieval_node(state: State) -> Dict[str, Any]:
 
 # Answer node: uses the context and question to generate an answer.
 def model_node(state: State) -> Dict[str, Any]:
-    llm = ChatOllama(model=MODEL_NAME, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-    llm.bind_tools(TOOLS)
+    # Choose model and prompt based on language
+    model_name = JAIS_MODEL if state.language == 'ar' else QWEN_MODEL
     prompt_template = PromptTemplate(
-        template="""
-        Using the following context, answer the question:\nContext: {context}\nQuestion: {question}\nAnswer:
-
-        if the user asks to translate the answer to Arabic, use the translate tool to translate the answer to Arabic.
-        """,
-        input_variables=["context", "question"]
+        template=JAIS_PROMPT if state.language == 'ar' else QWEN_PROMPT,
+        input_variables=["context", "question", "history"]
     )
-    prompt = prompt_template.format(context=state.context, question=state.question)
+    
+    prompt = prompt_template.format(
+        context=state.context,
+        question=state.question,
+        history=state.history
+    )
+    
+    # Initialize LLM
+    llm = ChatOllama(model=model_name, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     response = llm.invoke(prompt)
+    
+    # Add to conversation memory
+    memory.add_message("user", state.question)
+    memory.add_message("assistant", response.content)
+    
     return {
         "response": response,
         "messages": [response]
@@ -66,6 +80,9 @@ def route_model_output(state: State) -> Literal["__end__", "tools"]:
     return "tools"
 
 def ask_bot(question: str):
+    # Detect language of the question
+    language = detect_language(question)
+    
     # Build the state graph.
     graph_builder = StateGraph(State)
     graph_builder.add_node("retrieval", retrieval_node)
@@ -77,8 +94,11 @@ def ask_bot(question: str):
     graph_builder.add_edge("tools", "answer")
     graph = graph_builder.compile()
 
-    # Define the initial state.
-    initial_state = State(question=question)
+    # Get conversation history
+    history = memory.get_conversation_history()
+
+    # Define the initial state with detected language
+    initial_state = State(question=question, history=history, language=language)
 
     # Run the graph.
     final_state = graph.invoke(initial_state)

@@ -14,6 +14,7 @@
         <header>
             <h1>Dar Al-Ifta Q&A System</h1>
             <p class="subtitle">Ask questions about Islamic rulings and get answers from authentic sources</p>
+            <button id="clear-history" class="clear-btn">Clear History</button>
         </header>
         
         <main>
@@ -47,6 +48,25 @@
         marked.setOptions({
             breaks: true,
             gfm: true
+        });
+
+        // Add clear history functionality
+        document.getElementById('clear-history').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/clear-history', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    // Clear the chat messages
+                    const messagesDiv = document.getElementById('chat-messages');
+                    messagesDiv.innerHTML = '';
+                    addMessage('system', 'Conversation history cleared');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                addMessage('system', 'Failed to clear conversation history');
+            }
         });
 
         document.getElementById('question-form').addEventListener('submit', async (e) => {

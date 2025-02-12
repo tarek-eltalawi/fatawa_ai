@@ -1,76 +1,133 @@
 """
-Script to scrape Q&A data and ingest it into Pinecone.
+Script to scrape Q&A data from sitemap and ingest it into Pinecone.
 """
 
 import requests
 from bs4 import BeautifulSoup
 import time
-from typing import List, Dict, Any
+from typing import List, Dict
 from tqdm import tqdm
-from sentence_transformers import SentenceTransformer
-import pinecone
-from urllib.parse import urljoin
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+from datetime import datetime
+import xml.etree.ElementTree as ET
+from config import PINECONE_INDEX_NAME, EMBEDDING_MODEL, EMBEDDING_MODEL_KWARGS
+from pinecone_manager import PineconeManager
 
 class QAScraperPipeline:
-    def __init__(self):
-        # Initialize Pinecone
-        pinecone.init(
-            api_key=os.getenv("PINECONE_API_KEY"),
-            environment=os.getenv("PINECONE_ENVIRONMENT")
+    def __init__(self, namespace: str = "my_documents"):
+        # Initialize Pinecone manager with config values
+        self.pinecone_manager = PineconeManager(
+            namespace=namespace,
+            index_name="fatawa-in-arabic"
         )
-        self.index_name = os.getenv("PINECONE_INDEX_NAME")
-        self.index = pinecone.Index(self.index_name)
-        
-        # Initialize the embedding model
-        self.model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
         
         # Scraping configuration
-        self.base_url = "https://www.dar-alifta.org/ar/ViewFatwa.aspx"
+        self.base_url = "https://www.dar-alifta.org"
+        self.sitemap_url = "https://www.dar-alifta.org/sitemap/ar/sitemap.xml"
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
+
+    def parse_sitemap(self) -> List[Dict[str, str]]:
+        """Parse sitemap and extract only fatwa URLs with their last modified dates."""
+        response = requests.get(self.sitemap_url, headers=self.headers)
         
-    def get_page_content(self, page: int) -> str:
-        """Fetch content from a specific page."""
-        params = {'Page': str(page)}
-        response = requests.get(self.base_url, params=params, headers=self.headers)
-        response.encoding = 'utf-8'  # Ensure proper encoding for Arabic text
+        try:
+            # Find the start of the actual XML content
+            xml_start = response.text.find('<urlset')
+            if xml_start == -1:
+                raise ValueError("Could not find XML content in response")
+            
+            # Extract only the XML portion
+            xml_content = response.text[xml_start:]
+            
+            root = ET.fromstring(xml_content)
+            
+            # Define the namespace for cleaner code
+            ns = {'sm': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+            
+            urls = []
+            # Use the namespace more cleanly
+            for url in root.findall(".//sm:url", ns):
+                loc = url.find("sm:loc", ns).text
+                lastmod = url.find("sm:lastmod", ns).text
+                
+                # Only include URLs that match the fatwa format
+                if "/ar/fatawa/" in loc:
+                    fatwa_id = loc.split("/fatawa/")[1].split("/")[0]
+                    if fatwa_id.isdigit():
+                        urls.append({
+                            'url': loc,
+                            'lastmod': datetime.strptime(lastmod, "%Y-%m-%d"),
+                            'id': fatwa_id
+                        })
+                    # Check if we've reached the limit
+                    if len(urls) >= 10:
+                        break
+
+            return urls
+        
+        except Exception as e:
+            print(f"Error parsing sitemap: {e}")
+            print("Response content:")
+            print(response.text[:500])  # Print first 500 chars for debugging
+            raise
+
+    def get_page_content(self, url: str) -> str:
+        """Fetch content from a specific URL with proper Arabic encoding."""
+        response = requests.get(url, headers=self.headers)
+        
+        # Try to get encoding from response headers
+        if response.encoding:
+            response.encoding = response.encoding
+        # If not specified, try utf-8 (most common for Arabic web)
+        else:
+            response.encoding = 'utf-8'
+        
         return response.text
     
-    def parse_qa_items(self, html_content: str) -> List[Dict[str, str]]:
-        """Extract Q&A items from the page."""
+    def parse_qa_from_page(self, html_content: str, url: str, qa_id: str, lastmod: datetime) -> Dict[str, str]:
+        """Extract Q&A from the page."""
         soup = BeautifulSoup(html_content, 'html.parser')
-        qa_items = []
         
-        # Update these selectors based on the actual HTML structure
-        qa_containers = soup.find_all('div', class_='fatwa-container')
-        
-        for container in qa_containers:
-            try:
-                question = container.find('div', class_='question').get_text(strip=True)
-                answer = container.find('div', class_='answer').get_text(strip=True)
-                source = container.find('a')['href']
-                
-                qa_items.append({
-                    'question': question,
-                    'answer': answer,
-                    'source': source,
-                    'content': f"Question: {question}\nAnswer: {answer}"
-                })
-            except (AttributeError, KeyError) as e:
-                print(f"Error parsing QA item: {e}")
-                continue
-        
-        return qa_items
+        try:
+            # Get the question: it's in the first article > p after السؤال label
+            question_section = soup.find('label', class_='Questionlbl', string=lambda text: text and 'السؤال' in text)
+            if question_section:
+                question_div = question_section.find_next('div')
+                question = question_div.find('article').find('p').get_text(strip=True)
+            
+            # Get the answer: it's in article#shortquestion after الجواب label
+            answer_section = soup.find('article', id='shortquestion')
+            if answer_section:
+                # Get all p tags and combine their text
+                paragraphs = answer_section.find_all('p')
+                answer_texts = []
+                for p in paragraphs:
+                    # Skip empty paragraphs or those containing only the "details" link
+                    text = p.get_text(strip=True)
+                    if text and 'التفاصيل' not in text:
+                        answer_texts.append(text)
+                answer = ' '.join(answer_texts)
+            
+            if not question or not answer:
+                print(f"Warning: Missing question or answer for {url}")
+                return None
+            
+            return {
+                'id': qa_id,
+                'question': question,
+                'answer': answer,
+                'source': url,
+                'last_modified': lastmod.strftime("%Y-%m-%d"),  # Convert datetime to string
+                'content': f"Question: {question}\nAnswer: {answer}"
+            }
+        except (AttributeError, KeyError) as e:
+            print(f"Error parsing QA item from {url}: {e}")
+            return None
     
     def create_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Create embeddings for the given texts."""
-        return self.model.encode(texts).tolist()
+        """Create embeddings for the given texts using PineconeManager."""
+        return self.pinecone_manager.create_embeddings(texts)
     
     def upload_to_pinecone(self, qa_items: List[Dict[str, str]], batch_size: int = 100):
         """Upload QA items to Pinecone in batches."""
@@ -85,54 +142,65 @@ class QAScraperPipeline:
             vectors = []
             for j, embedding in enumerate(embeddings):
                 vectors.append((
-                    f"qa_{i+j}",  # ID
-                    embedding,    # Vector
-                    {            # Metadata
+                    batch[j]['id'],
+                    embedding,
+                    {
                         'question': batch[j]['question'],
                         'answer': batch[j]['answer'],
-                        'source': batch[j]['source']
+                        'source': batch[j]['source'],
+                        'last_modified': batch[j]['last_modified']
                     }
                 ))
             
-            # Upload to Pinecone
-            self.index.upsert(vectors=vectors)
+            # Upload to Pinecone using manager
+            self.pinecone_manager.upsert_vectors(vectors)
     
-    def scrape_and_ingest(self, start_page: int = 1, end_page: int = None):
+    def scrape_and_ingest(self, start_date: datetime = None):
         """Main function to scrape pages and ingest data."""
-        current_page = start_page
+        # Get all URLs from sitemap
+        urls = self.parse_sitemap()
+        
+        # Filter by date if start_date is provided
+        if start_date:
+            urls = [url for url in urls if url['lastmod'] >= start_date]
+        
         all_qa_items = []
         
-        with tqdm(desc="Scraping pages") as pbar:
-            while True:
+        with tqdm(total=len(urls), desc="Scraping pages") as pbar:
+            for url_info in urls:
                 try:
                     # Get page content
-                    content = self.get_page_content(current_page)
-                    qa_items = self.parse_qa_items(content)
+                    content = self.get_page_content(url_info['url'])
+                    qa_item = self.parse_qa_from_page(
+                        content, 
+                        url_info['url'], 
+                        url_info['id'],
+                        url_info['lastmod']  # Pass the lastmod date
+                    )
                     
-                    # Break if no items found or reached end_page
-                    if not qa_items or (end_page and current_page >= end_page):
-                        break
-                    
-                    all_qa_items.extend(qa_items)
-                    print(f"Scraped {len(qa_items)} items from page {current_page}")
-                    
-                    # Upload batch to Pinecone
-                    self.upload_to_pinecone(qa_items)
-                    
-                    current_page += 1
-                    pbar.update(1)
+                    if qa_item:
+                        all_qa_items.append(qa_item)
+                        print(f"Scraped item {qa_item['id']} from {url_info['url']}")
                     
                     # Add delay to be respectful to the server
                     time.sleep(2)
+                    pbar.update(1)
                     
                 except Exception as e:
-                    print(f"Error processing page {current_page}: {e}")
-                    break
+                    print(f"Error processing URL {url_info['url']}: {e}")
+                    continue
+        
+        # Upload all items to Pinecone
+        if all_qa_items:
+            print(f"Uploading {len(all_qa_items)} items to Pinecone...")
+            self.upload_to_pinecone(all_qa_items)
         
         print(f"Finished scraping. Total items collected: {len(all_qa_items)}")
         return all_qa_items
 
 if __name__ == "__main__":
     # Initialize and run the scraper
-    scraper = QAScraperPipeline()
-    scraper.scrape_and_ingest(start_page=1, end_page=10)  # Adjust page range as needed 
+    scraper = QAScraperPipeline(namespace="qa")
+    # Optional: provide start_date to only scrape items modified after this date
+    # start_date = datetime(2023, 1, 1)
+    scraper.scrape_and_ingest() 

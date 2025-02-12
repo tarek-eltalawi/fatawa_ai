@@ -28,14 +28,16 @@ class State:
 
 # Retrieval node: adds a "context" key based on the question.
 def retrieval_node(state: State) -> Dict[str, Any]:
-    pinecone_manager = PineconeManager("my_documents")
+    namespace = "Default" if state.language == 'ar' else "my_documents"
+    pinecone_manager = PineconeManager(namespace=namespace)
     question = state.question
     retriever = pinecone_manager.vector_store.as_retriever(search_kwargs={"k": TOP_K})
     retrieved_docs = retriever.invoke(question)
     # Combine the content of retrieved docs into a single string.
     context = "\n".join(doc.page_content for doc in retrieved_docs)
     sources = set(
-        "https://www.dar-alifta.org" + doc.metadata.get('source', 'No source available')
+        doc.metadata.get('source', 'No source available') if doc.metadata.get('source', '').startswith('https://www.dar-alifta.org')
+        else "https://www.dar-alifta.org" + doc.metadata.get('source', 'No source available')
         for doc in retrieved_docs
     )
     return {

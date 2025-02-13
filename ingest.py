@@ -6,7 +6,7 @@ from pinecone import Pinecone, ServerlessSpec
 from config import (
     PINECONE_API_KEY,
     PINECONE_ENVIRONMENT,
-    PINECONE_INDEX_NAME,
+    PINECONE_INDEX_NAME_EN,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
     EMBEDDING_DIMENSION,
@@ -21,9 +21,9 @@ class DocumentIngester:
         self.pinecone_manager = PineconeManager(namespace)
         
         # Create index if it doesn't exist
-        if PINECONE_INDEX_NAME not in self.pinecone_manager.pc.list_indexes().names():
+        if PINECONE_INDEX_NAME_EN not in self.pinecone_manager.pc.list_indexes().names():
             self.pinecone_manager.pc.create_index(
-                name=PINECONE_INDEX_NAME,
+                name=PINECONE_INDEX_NAME_EN,
                 dimension=EMBEDDING_DIMENSION,
                 metric="cosine",
                 spec=ServerlessSpec(

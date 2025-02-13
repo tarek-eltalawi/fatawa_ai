@@ -8,7 +8,7 @@ from config import (
     PINECONE_ENVIRONMENT,
     EMBEDDING_MODEL,
     EMBEDDING_MODEL_KWARGS,
-    PINECONE_INDEX_NAME,
+    PINECONE_INDEX_NAME_EN,
     EMBEDDING_DIMENSION
 )
 
@@ -16,7 +16,7 @@ class PineconeManager:
     def __init__(
         self,
         namespace: str = "my_documents",
-        index_name: str = PINECONE_INDEX_NAME,
+        index_name: str = PINECONE_INDEX_NAME_EN,
         embedding_model: str = EMBEDDING_MODEL,
         embedding_kwargs: Dict[str, Any] = EMBEDDING_MODEL_KWARGS
     ):
@@ -42,7 +42,7 @@ class PineconeManager:
         self.vector_store = PineconeVectorStore.from_existing_index(
             index_name=self.index_name,
             embedding=self.embeddings,
-            namespace=self.namespace
+            namespace=self.namespace,
         )
     
     def ensure_index_exists(self):

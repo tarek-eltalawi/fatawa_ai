@@ -7,11 +7,11 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
 
-from config import JAIS_MODEL, QWEN_MODEL, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
+from config import JAIS_MODEL, PINECONE_INDEX_NAME_EN, PINECONE_INDEX_NAME_AR, QWEN_MODEL, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
 from pinecone_manager import PineconeManager
 from tools import TOOLS, detect_language
 from memory import ConversationMemory
-from prompts import JAIS_PROMPT, QWEN_PROMPT
+from prompts import ARABIC_PROMPT, ENGLISH_PROMPT
 
 # Initialize conversation memory
 memory = ConversationMemory(max_messages=10)
@@ -28,18 +28,44 @@ class State:
 
 # Retrieval node: adds a "context" key based on the question.
 def retrieval_node(state: State) -> Dict[str, Any]:
-    namespace = "Default" if state.language == 'ar' else "my_documents"
-    pinecone_manager = PineconeManager(namespace=namespace)
     question = state.question
-    retriever = pinecone_manager.vector_store.as_retriever(search_kwargs={"k": TOP_K})
-    retrieved_docs = retriever.invoke(question)
-    # Combine the content of retrieved docs into a single string.
-    context = "\n".join(doc.page_content for doc in retrieved_docs)
-    sources = set(
-        doc.metadata.get('source', 'No source available') if doc.metadata.get('source', '').startswith('https://www.dar-alifta.org')
-        else "https://www.dar-alifta.org" + doc.metadata.get('source', 'No source available')
-        for doc in retrieved_docs
+    if state.language == 'ar':
+        return retrieve_docs_arabic(question)
+    else:
+        pinecone_manager = PineconeManager()
+        retriever = pinecone_manager.vector_store.as_retriever(search_kwargs={"k": TOP_K})
+        retrieved_docs = retriever.invoke(question)
+        
+        # Combine the content of relevant docs into a single string
+        context = "\n".join(doc.page_content for doc in retrieved_docs)
+        sources = set(
+            "https://www.dar-alifta.org" + doc.metadata.get('source', 'No source available')
+            for doc in retrieved_docs
+        )
+        
+        return {
+            "context": context,
+            "sources": sources
+        }
+
+def retrieve_docs_arabic(question: str) -> Dict[str, Any]:
+    pinecone_manager = PineconeManager(namespace="", index_name=PINECONE_INDEX_NAME_AR)
+    pinecone_index = pinecone_manager.pc.Index(pinecone_manager.index_name)
+    query_vector = pinecone_manager.embeddings.embed_query(question)
+    results = pinecone_index.query(
+        vector=query_vector,
+        top_k=TOP_K,
+        include_metadata=True,
+        include_values=False
     )
+
+    retrieved_docs = results.matches
+    relevant_docs = [doc for doc in retrieved_docs if doc.score >= 0.5]
+
+    # Combine the content of relevant docs into a single string
+    context = "\n".join(doc.metadata.get('answer') for doc in relevant_docs)
+    sources = set(doc.metadata.get('source', 'No source available') for doc in relevant_docs)
+    
     return {
         "context": context,
         "sources": sources
@@ -48,9 +74,9 @@ def retrieval_node(state: State) -> Dict[str, Any]:
 # Answer node: uses the context and question to generate an answer.
 def model_node(state: State) -> Dict[str, Any]:
     # Choose model and prompt based on language
-    model_name = JAIS_MODEL if state.language == 'ar' else QWEN_MODEL
+    model_name = QWEN_MODEL
     prompt_template = PromptTemplate(
-        template=JAIS_PROMPT if state.language == 'ar' else QWEN_PROMPT,
+        template=ARABIC_PROMPT if state.language == 'ar' else ENGLISH_PROMPT,
         input_variables=["context", "question", "history"]
     )
     
@@ -114,4 +140,5 @@ def ask_bot(question: str):
 
 # for direct testing of this file
 # if __name__ == "__main__":
-#     print(ask_bot("should i grow my beard?"))
+#     print(ask_bot("هل يجوز قراءة القرآن بدون وضوء؟"))
+    # print(ask_bot("should i grow my beard?"))

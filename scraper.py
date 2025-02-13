@@ -9,15 +9,15 @@ from typing import List, Dict
 from tqdm import tqdm
 from datetime import datetime
 import xml.etree.ElementTree as ET
-from config import PINECONE_INDEX_NAME, EMBEDDING_MODEL, EMBEDDING_MODEL_KWARGS
+from config import PINECONE_INDEX_NAME_EN, PINECONE_INDEX_NAME_AR, EMBEDDING_MODEL, EMBEDDING_MODEL_KWARGS
 from pinecone_manager import PineconeManager
 
 class QAScraperPipeline:
-    def __init__(self, namespace: str = "my_documents"):
+    def __init__(self, namespace: str = "qa"):
         # Initialize Pinecone manager with config values
         self.pinecone_manager = PineconeManager(
             namespace=namespace,
-            index_name="fatawa-in-arabic"
+            index_name=PINECONE_INDEX_NAME_AR
         )
         
         # Scraping configuration
@@ -146,7 +146,7 @@ class QAScraperPipeline:
                     embedding,
                     {
                         'question': batch[j]['question'],
-                        'answer': batch[j]['answer'],
+                        'text': batch[j]['answer'],
                         'source': batch[j]['source'],
                         'last_modified': batch[j]['last_modified']
                     }

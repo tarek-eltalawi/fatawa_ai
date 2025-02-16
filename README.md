@@ -6,7 +6,6 @@ A RAG (Retrieval-Augmented Generation) system that answers questions about Islam
 - Question answering using LLM with context from fatwa database
 - Semantic search using Pinecone vector store
 - Document ingestion with metadata preservation
-- Deduplication of sources
 - Modern web interface for easy interaction
 - Markdown rendering for formatted answers
 - Source linking to original fatwas
@@ -123,25 +122,34 @@ python query.py
 4. **Pinecone errors**: Check your environment variables are set correctly
 
 ### Environment Setup
-- Python 3.8 or higher is required
+- Python 3.11 or higher is required
 - Make sure all environment variables in `.env` are set
 - The web interface requires a modern browser with JavaScript enabled
 
 ## Upcoming Features
 
+- handle arabic format in the answers and make it more presentable (written correctly from right to left)
+- convert the graph to be a async graph so that if more nodes are added, they can run in parallel
+- add more nodes as tools to retrieve extra sources if needed
+- one idea is to translate questions to be able to search in the other vector database (curently arabic vector database has much more data than english)
+- add apps interface for both ios and android
+- experiment with different models and different prompt engineering, QWEN is doing good but not that good specially for arabic
+- separate scraping from ingesting logic
+- make the project more readable and modular
+
 #### Tools:
 - [x] Translation tool
-- [ ] Web search tool
+- [ ] Resources Fetching tool
 - [ ] Image search tool
 - [ ] File search tool
 
 ### High Priority
 - [x] Web interface for easier interaction
-- [ ] Support for conversation history
-- [ ] Support for multiple languages (Arabic, Urdu, etc.)
+- [x] Support for conversation history
+- [x] Support for multiple languages (Arabic)
+- [x] Source ranking by relevance score
 - [ ] Question classification to improve retrieval accuracy
 - [ ] Streaming responses for faster feedback
-- [ ] Source ranking by relevance score
 
 ### Medium Priority
 - [ ] Support for more document formats (PDF, HTML)
@@ -156,6 +164,7 @@ python query.py
 - [ ] Documentation improvements
 - [ ] User feedback collection
 - [ ] Answer confidence scoring
+- [ ] Fine tune the model
 
 Final vision of a workflow:
 - Agents has a Dar Al Iftaa node which is the primary node. It has a tool for translation.

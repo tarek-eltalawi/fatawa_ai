@@ -35,6 +35,66 @@ PINECONE_INDEX_NAME=your_index_name
 ollama run qwen2.5:7b
 ```
 
+## Data Collection
+
+### Running the Scrapers
+The system includes scrapers for both Arabic and English fatwas from Dar Al-Iftaa. You can run them separately:
+
+#### Using Python Scripts
+1. For English Fatwas:
+```bash
+python scraper_en.py
+```
+
+2. For Arabic Fatwas:
+```bash
+python scraper_ar.py
+```
+
+#### Using Python Interactive Shell
+1. For English Fatwas:
+```python
+from scraper_en import EnglishQAScraper
+
+# Initialize with custom parameters (optional)
+scraper = EnglishQAScraper(
+    batch_size=50,     # Number of items per batch
+    sleep_time=1,      # Delay between requests in seconds
+    max_retries=3,     # Maximum retry attempts for failed requests
+    debug=True         # Enable detailed logging
+)
+
+# Start scraping and ingestion
+scraper.scrape_and_ingest()
+```
+
+2. For Arabic Fatwas:
+```python
+from scraper_ar import ArabicQAScraper
+
+scraper = ArabicQAScraper(
+    batch_size=50,
+    sleep_time=1,
+    max_retries=3,
+    debug=True
+)
+
+scraper.scrape_and_ingest()
+```
+
+### Scraping Parameters
+- `batch_size`: Number of items to process in each batch (default: 50)
+- `sleep_time`: Delay between requests to avoid rate limiting (default: 1 second)
+- `max_retries`: Number of retry attempts for failed requests (default: 3)
+- `debug`: Enable verbose logging for troubleshooting (default: False)
+
+### Data Storage
+- Scraped fatwas are stored in Pinecone vector database
+- English fatwas go to index: `fatawa-in-english`
+- Arabic fatwas go to index: `fatawa-in-arabic`
+- Each fatwa is split into chunks for efficient retrieval
+- Metadata includes source URL and other relevant information
+
 ## Usage
 
 ### Running the Application

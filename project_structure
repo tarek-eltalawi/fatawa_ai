@@ -1,11 +1,19 @@
 fatawa/
 ├── documents/
 │   └── fatawa.txt
-├── config.py
-├── pinecone_manager.py
-├── ingest.py
-├── query.py
-├── service.py
-├── tools.py
-├── requirements.txt
-└── README.md 
+│   ├── fatawa_ar.json       # Arabic fatwas
+│   └── fatawa_en.json       # English fatwas
+├── base_scraper.py          # Base scraping functionality
+├── scraper_ar.py            # Arabic scraper implementation
+├── scraper_en.py            # English scraper implementation
+├── config.py                # Configuration settings
+├── pinecone_manager.py      # Vector database management
+├── service.py               # Main service logic
+├── tools.py                 # Utility tools
+├── text_utils.py            # Text preprocessing utilities
+├── memory.py                # Conversation memory management
+├── prompts.py               # LLM prompt templates
+├── query.py                 # CLI interface
+├── app.py                   # Web interface
+├── requirements.txt         # Project dependencies
+└── README.md                # Project documentation

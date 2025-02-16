@@ -1,24 +1,25 @@
-from typing import Optional, List, Dict, Any
+from typing import List, Dict, Any, Optional
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_pinecone import PineconeVectorStore
 from pinecone import Pinecone, ServerlessSpec
-from langchain_core.runnables import RunnableConfig
+from text_utils import preprocess_text
 from config import (
     PINECONE_API_KEY,
     PINECONE_ENVIRONMENT,
-    EMBEDDING_MODEL,
+    EMBEDDING_MODEL_EN,
+    EMBEDDING_MODEL_AR,
     EMBEDDING_MODEL_KWARGS,
+    EMBEDDING_DIMENSION,
+    TOP_K,
     PINECONE_INDEX_NAME_EN,
-    EMBEDDING_DIMENSION
+    PINECONE_INDEX_NAME_AR
 )
 
 class PineconeManager:
     def __init__(
         self,
-        namespace: str = "my_documents",
+        namespace: str = "qa",
         index_name: str = PINECONE_INDEX_NAME_EN,
-        embedding_model: str = EMBEDDING_MODEL,
-        embedding_kwargs: Dict[str, Any] = EMBEDDING_MODEL_KWARGS
+        embedding_model: Optional[str] = None
     ):
         # Initialize Pinecone client
         self.pc = Pinecone(
@@ -29,21 +30,24 @@ class PineconeManager:
         self.namespace = namespace
         self.index_name = index_name
         
+        # Select appropriate embedding model based on index name
+        if embedding_model is None:
+            embedding_model = (
+                EMBEDDING_MODEL_AR 
+                if index_name == PINECONE_INDEX_NAME_AR 
+                else EMBEDDING_MODEL_EN
+            )
+        
         # Create index if it doesn't exist
         self.ensure_index_exists()
         
         # Initialize embeddings using config values
         self.embeddings = HuggingFaceEmbeddings(
             model_name=embedding_model,
-            model_kwargs=embedding_kwargs
+            model_kwargs=EMBEDDING_MODEL_KWARGS
         )
         
-        # Initialize vector store
-        self.vector_store = PineconeVectorStore.from_existing_index(
-            index_name=self.index_name,
-            embedding=self.embeddings,
-            namespace=self.namespace,
-        )
+        self.language = 'ar' if index_name == PINECONE_INDEX_NAME_AR else 'en'
     
     def ensure_index_exists(self):
         """Create index if it doesn't exist."""
@@ -61,10 +65,66 @@ class PineconeManager:
             print(f"Index '{self.index_name}' created successfully")
     
     def create_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Create embeddings for the given texts."""
-        return self.embeddings.embed_documents(texts)
+        """Create embeddings for the given texts with preprocessing."""
+        # Preprocess texts based on language
+        processed_texts = [
+            preprocess_text(text, self.language) 
+            for text in texts
+        ]
+        return self.embeddings.embed_documents(processed_texts)
     
     def upsert_vectors(self, vectors: List[tuple[str, List[float], dict]]):
         """Upsert vectors to Pinecone."""
         index = self.pc.Index(self.index_name)
-        index.upsert(vectors=vectors) 
+        index.upsert(
+            vectors=vectors,
+            namespace=self.namespace
+        )
+
+    def retrieve_docs(self, question: str) -> Dict[str, Any]:
+        """Retrieve documents with preprocessed query."""
+        pinecone_index = self.pc.Index(self.index_name)
+        processed_question = preprocess_text(question, self.language)
+        query_vector = self.embeddings.embed_query(processed_question)
+        results = pinecone_index.query(
+            vector=query_vector,
+            top_k=TOP_K,
+            namespace=self.namespace,
+            include_metadata=True,
+            include_values=False
+        )
+        return results.matches
+
+    def get_vector_by_id(self, vector_id: str) -> Optional[Dict]:
+        """Retrieve a vector by its ID."""
+        index = self.pc.Index(self.index_name)
+        try:
+            result = index.fetch(
+                ids=[vector_id],
+                namespace=self.namespace
+            )
+            vectors = result.get('vectors', {})
+            if vector_id in vectors:
+                vector_data = vectors[vector_id]
+                return type('VectorMatch', (), {
+                    'id': vector_id,
+                    'metadata': vector_data.get('metadata', {}),
+                    'score': 1.0  # Since this is a direct fetch, score is 1.0
+                })
+            return None
+        except Exception as e:
+            print(f"Error fetching vector {vector_id}: {str(e)}")
+            return None
+
+    def batch_fetch_vectors(self, vector_ids: List[str]) -> Dict[str, Any]:
+        """Fetch multiple vectors in a single request."""
+        index = self.pc.Index(self.index_name)
+        try:
+            result = index.fetch(
+                ids=vector_ids,
+                namespace=self.namespace
+            )
+            return result.get('vectors', {})
+        except Exception as e:
+            print(f"Error batch fetching vectors: {str(e)}")
+            return {}

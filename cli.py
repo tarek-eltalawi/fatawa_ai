@@ -1,7 +1,4 @@
-import warnings
 from service import ask_bot
-# Suppress all LangChain warnings
-warnings.filterwarnings('ignore', category=UserWarning, module='langchain')
 
 if __name__ == "__main__":
     try:

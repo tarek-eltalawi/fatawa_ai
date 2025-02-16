@@ -2,12 +2,12 @@ from typing import Annotated, Any, Dict, List, Literal, Sequence
 from dataclasses import dataclass, field
 from langchain_ollama import ChatOllama
 from langchain.prompts import PromptTemplate
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import StateGraph, START
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
 
-from config import JAIS_MODEL, PINECONE_INDEX_NAME_EN, PINECONE_INDEX_NAME_AR, QWEN_MODEL, OLLAMA_BASE_URL, TEMPERATURE, TOP_K
+from config import PINECONE_INDEX_NAME_AR, PINECONE_INDEX_NAME_EN, QWEN_MODEL, OLLAMA_BASE_URL, RESPONSE_LABELS, TEMPERATURE
 from pinecone_manager import PineconeManager
 from tools import TOOLS, detect_language
 from memory import ConversationMemory
@@ -29,46 +29,69 @@ class State:
 # Retrieval node: adds a "context" key based on the question.
 def retrieval_node(state: State) -> Dict[str, Any]:
     question = state.question
-    if state.language == 'ar':
-        return retrieve_docs_arabic(question)
-    else:
-        pinecone_manager = PineconeManager()
-        retriever = pinecone_manager.vector_store.as_retriever(search_kwargs={"k": TOP_K})
-        retrieved_docs = retriever.invoke(question)
-        
-        # Combine the content of relevant docs into a single string
-        context = "\n".join(doc.page_content for doc in retrieved_docs)
-        sources = set(
-            "https://www.dar-alifta.org" + doc.metadata.get('source', 'No source available')
-            for doc in retrieved_docs
-        )
-        
-        return {
-            "context": context,
-            "sources": sources
-        }
-
-def retrieve_docs_arabic(question: str) -> Dict[str, Any]:
-    pinecone_manager = PineconeManager(namespace="", index_name=PINECONE_INDEX_NAME_AR)
-    pinecone_index = pinecone_manager.pc.Index(pinecone_manager.index_name)
-    query_vector = pinecone_manager.embeddings.embed_query(question)
-    results = pinecone_index.query(
-        vector=query_vector,
-        top_k=TOP_K,
-        include_metadata=True,
-        include_values=False
-    )
-
-    retrieved_docs = results.matches
+    index_name = PINECONE_INDEX_NAME_EN if state.language == 'en' else PINECONE_INDEX_NAME_AR
+    pinecone_manager = PineconeManager(index_name=index_name)
+    
+    # Get initial matches
+    retrieved_docs = pinecone_manager.retrieve_docs(question)
     relevant_docs = [doc for doc in retrieved_docs if doc.score >= 0.5]
-
-    # Combine the content of relevant docs into a single string
-    context = "\n".join(doc.metadata.get('answer') for doc in relevant_docs)
-    sources = set(doc.metadata.get('source', 'No source available') for doc in relevant_docs)
+    
+    # Track processed IDs and collect chunk IDs
+    processed_ids = set()
+    chunk_ids_to_fetch = []
+    doc_chunks_map = {}  # Map base_ids to their chunks info
+    
+    # First pass: collect all chunk IDs we need to fetch
+    for doc in relevant_docs:
+        base_id = doc.id.rsplit('-', 1)[0]
+        if base_id in processed_ids:
+            continue
+            
+        processed_ids.add(base_id)
+        total_chunks = int(doc.metadata.get('total_chunks', 1))
+        
+        # Store the first chunk we already have
+        current_chunk_idx = int(doc.id.rsplit('-', 1)[1])
+        doc_chunks_map[base_id] = {
+            'total': total_chunks,
+            'chunks': {current_chunk_idx: doc.metadata['text']},
+            'source': doc.metadata.get('source', 'No source available')  # Store source with the document
+        }
+        
+        # Collect other chunk IDs we need
+        for i in range(total_chunks):
+            if i != current_chunk_idx:
+                chunk_ids_to_fetch.append(f"{base_id}-{i}")
+    
+    # Batch fetch all needed chunks
+    if chunk_ids_to_fetch:
+        fetched_vectors = pinecone_manager.batch_fetch_vectors(chunk_ids_to_fetch)
+        
+        # Process fetched chunks
+        for vector_id, vector_data in fetched_vectors.items():
+            base_id, chunk_idx = vector_id.rsplit('-', 1)
+            if base_id in doc_chunks_map:
+                doc_chunks_map[base_id]['chunks'][int(chunk_idx)] = vector_data.metadata['text']
+    
+    # Assemble complete answers
+    complete_answers = []
+    for base_id, chunk_info in doc_chunks_map.items():
+        # Sort and combine chunks
+        sorted_chunks = [
+            chunk_info['chunks'][i] 
+            for i in range(chunk_info['total']) 
+            if i in chunk_info['chunks']
+        ]
+        complete_answer = ' '.join(sorted_chunks)
+        
+        complete_answers.append({
+            'text': complete_answer,
+            'source': chunk_info['source']  # Use the source stored with each document
+        })
     
     return {
-        "context": context,
-        "sources": sources
+        "context": "\n\n".join(answer['text'] for answer in complete_answers),
+        "sources": set(answer['source'] for answer in complete_answers)
     }
 
 # Answer node: uses the context and question to generate an answer.
@@ -130,15 +153,17 @@ def ask_bot(question: str):
 
     # Run the graph.
     final_state = graph.invoke(initial_state)
-    result = f"\nAnswer: {final_state.get('response').content}"
+    labels = RESPONSE_LABELS[language]
+    result = f"\n{labels['answer']}: {final_state.get('response').content}"
     sources = final_state.get('sources', [])
     if sources:
-        result += "\n\nSources:"
+        result += f"\n\n{labels['sources']}:"
         for source in sources:
             result += f"\n- {source}"
     return result
 
 # for direct testing of this file
 # if __name__ == "__main__":
-#     print(ask_bot("هل يجوز قراءة القرآن بدون وضوء؟"))
-    # print(ask_bot("should i grow my beard?"))
+    # print(ask_bot("هل يجوز قراءة القرآن بدون وضوء؟"))
+    # print(ask_bot("ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟"))
+    # print(ask_bot("can I send Christmas greetings to Christian friends?"))

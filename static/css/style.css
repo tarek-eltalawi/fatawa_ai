@@ -49,6 +49,8 @@ main {
 }
 
 .chat-container {
+    max-width: 900px;
+    margin: 0 auto;
     background: white;
     border-radius: 12px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -69,17 +71,22 @@ main {
     padding: 1rem;
     border-radius: 8px;
     max-width: 80%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    margin-inline: 1rem;
 }
 
 .user-message {
     background-color: var(--secondary-color);
     color: white;
     margin-left: auto;
+    margin-right: 1rem;
 }
 
 .assistant-message {
     background-color: #f0f0f0;
     margin-right: auto;
+    margin-left: 1rem;
 }
 
 .system-message {
@@ -120,11 +127,11 @@ main {
     transition: color 0.2s;
     display: inline-block;
     padding: 0.2rem 0;
+    font-family: 'Roboto', sans-serif !important;
 }
 
 .sources-list a:hover {
     color: var(--secondary-color);
-    text-decoration: underline;
 }
 
 .question-form {
@@ -249,4 +256,203 @@ footer {
 
 .clear-btn:hover {
     background-color: #c82333;
-} 
+}
+
+[dir="rtl"] .message,
+.message[dir="rtl"] {
+    font-family: 'Noto Naskh Arabic', serif;
+    text-align: right;
+}
+
+[dir="rtl"] .user-message,
+.user-message[dir="rtl"] {
+    margin-left: 1rem;
+    margin-right: auto;
+}
+
+[dir="rtl"] .assistant-message,
+.assistant-message[dir="rtl"] {
+    margin-right: 1rem;
+    margin-left: auto;
+}
+
+.markdown-content[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+.markdown-content[dir="rtl"] pre,
+.markdown-content[dir="rtl"] code {
+    direction: ltr;
+    text-align: left;
+    font-family: monospace;
+}
+
+/* Ensure source numbers stay in English */
+[dir="rtl"] .sources,
+.sources[dir="rtl"] {
+    font-family: 'Roboto', sans-serif !important;
+}
+
+/* Sources always LTR */
+.sources {
+    direction: ltr !important;
+    text-align: left !important;
+    font-family: 'Roboto', sans-serif !important;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.sources ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin-top: 0.5rem !important;
+}
+
+.sources li {
+    margin: 0.5rem 0 !important;
+    display: list-item !important;
+}
+
+.sources a,
+.markdown-content a {
+    color: #3b82f6 !important;
+    text-decoration: none !important;
+    transition: color 0.2s !important;
+}
+
+.sources a:hover,
+.markdown-content a:hover {
+    text-decoration: underline !important;
+    color: #2563eb !important;
+}
+
+.font-arabic {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 0.9em;
+    margin-top: 0.25rem;
+}
+
+/* Fix message overflow */
+.message {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 8px;
+    max-width: 80%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    margin-inline: 1rem;
+}
+
+.markdown-content {
+    line-height: 1.6;
+}
+
+.markdown-content p {
+    margin-bottom: 1rem;
+}
+
+.markdown-content ul,
+.markdown-content ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.markdown-content li {
+    margin: 0.5rem 0;
+}
+
+.markdown-content a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.markdown-content a:hover {
+    text-decoration: underline;
+}
+
+.markdown-content code {
+    background: #f4f4f4;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+    direction: ltr;
+    display: inline-block;
+}
+
+.markdown-content pre {
+    background: #f4f4f4;
+    padding: 1rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.markdown-content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+}
+
+/* RTL specific markdown styles */
+.markdown-content[dir="rtl"] {
+    direction: rtl;
+    text-align: right;
+}
+
+.markdown-content[dir="rtl"] pre,
+.markdown-content[dir="rtl"] code {
+    direction: ltr;
+    text-align: left;
+}
+
+.markdown-content[dir="rtl"] ul,
+.markdown-content[dir="rtl"] ol {
+    padding-right: 2rem;
+    padding-left: 0;
+}
+
+.markdown-content a {
+    color: #3b82f6;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.markdown-content a:hover {
+    text-decoration: underline;
+    color: #2563eb;
+}
+
+.markdown-content ul {
+    list-style-type: disc !important;
+    padding-left: 1.5rem !important;
+    margin: 0.5rem 0 !important;
+}
+
+.markdown-content li {
+    margin: 0.5rem 0 !important;
+    display: list-item !important;
+}
+
+/* Language specific display */
+[dir="ltr"] .ar {
+    display: none;
+}
+
+[dir="rtl"] .en {
+    display: none;
+}
+
+/* History title styles */
+.sidebar-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+[dir="rtl"] .sidebar-title {
+    font-family: 'Noto Naskh Arabic', serif;
+}

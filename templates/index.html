@@ -1,46 +1,306 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dar Al-Ifta Q&A System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <!-- Add marked.js for markdown rendering -->
+    <title>Islamic Fatwa Assistant</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js for markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Dar Al-Ifta Q&A System</h1>
-            <p class="subtitle">Ask questions about Islamic rulings and get answers from authentic sources</p>
-            <button id="clear-history" class="clear-btn">Clear History</button>
-        </header>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Arabic font - Noto Naskh Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        arabic: ['Noto Naskh Arabic', 'serif'],
+                        sans: ['Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* RTL specific styles */
+        [dir="rtl"] {
+            font-family: 'Noto Naskh Arabic', serif;
+        }
         
-        <main>
-            <div class="chat-container">
-                <div id="chat-messages" class="chat-messages">
+        [dir="rtl"] .message {
+            text-align: right;
+        }
+
+        /* Loading animation */
+        .typing-dot {
+            animation: typing 1.4s infinite;
+            opacity: 0.2;
+        }
+
+        @keyframes typing {
+            0%, 100% { 
+                opacity: 0.2; 
+                transform: translateY(0);
+            }
+            50% { 
+                opacity: 1;
+                transform: translateY(-2px);
+            }
+        }
+
+        /* Message styles */
+        .message {
+            max-width: 48rem;
+            margin-left: auto;
+            margin-right: auto;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: messageAppear 0.5s ease forwards;
+        }
+
+        @keyframes messageAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .answer-section {
+            line-height: 1.6;
+            opacity: 0;
+            animation: typeAnswer 0.8s ease forwards;
+        }
+
+        @keyframes typeAnswer {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        [dir="rtl"] .answer-section {
+            font-family: 'Noto Naskh Arabic', serif;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        /* Question input styles */
+        #question-input {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        [dir="rtl"] #question-input {
+            font-family: 'Noto Naskh Arabic', serif;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        /* Sources section styles */
+        .sources-section {
+            margin-top: 1.5rem !important;
+            padding-top: 1.5rem !important;
+            border-top: 1px solid #e5e7eb !important;
+            font-family: 'Roboto', sans-serif !important;
+        }
+
+        [dir="rtl"] .sources-section {
+            direction: rtl !important;
+            text-align: right !important;
+            font-family: 'Noto Naskh Arabic', serif !important;
+        }
+
+        [dir="rtl"] .sources-section ul {
+            padding-right: 1.5rem !important;
+            padding-left: 0 !important;
+        }
+
+        .dark .sources-section {
+            border-color: #374151 !important;
+        }
+
+        .sources-section ul {
+            list-style-type: disc !important;
+            padding-left: 1.5rem !important;
+            margin-top: 0.5rem !important;
+        }
+
+        .sources-section li {
+            margin: 0.5rem 0 !important;
+            display: list-item !important;
+        }
+
+        .sources-section a {
+            color: #2563eb !important;
+            text-decoration: none !important;
+            transition: all 0.2s !important;
+        }
+
+        .dark .sources-section a {
+            color: #60a5fa !important;
+        }
+
+        .sources-section a:hover {
+            text-decoration: underline !important;
+        }
+
+        /* Language specific display */
+        [dir="ltr"] .ar {
+            display: none !important;
+        }
+
+        [dir="rtl"] .en {
+            display: none !important;
+        }
+
+        [dir="rtl"] .ar {
+            display: block !important;
+        }
+
+        .user-message {
+            position: relative;
+        }
+
+        .user-message::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 20px;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-top-color: rgb(219 234 254);
+            border-bottom: 0;
+        }
+
+        .dark .user-message::after {
+            border-top-color: rgb(30 58 138);
+        }
+
+        [dir="rtl"] .user-message::after {
+            right: auto;
+            left: 20px;
+        }
+
+        /* List styles */
+        .message ol, .message ul {
+            list-style: none !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .message li {
+            display: flex !important;
+            align-items: flex-start !important;
+            margin: 0.5rem 0 !important;
+        }
+
+        .message li::before {
+            display: none !important;  /* Hide the CSS counter */
+        }
+
+        /* Sources section specific list styles */
+        .sources-section ul {
+            list-style-type: disc !important;
+            padding-left: 1.5rem !important;
+        }
+
+        .sources-section li {
+            display: list-item !important;
+        }
+
+        .sources-section li::before {
+            content: none !important;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50 dark:bg-gray-900">
+    <!-- Sidebar -->
+    <div class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-200 ease-in-out lg:translate-x-0" 
+         id="sidebar">
+        <div class="flex flex-col h-full">
+            <!-- Theme Toggle -->
+            <div class="p-4 flex justify-between items-center border-b dark:border-gray-700">
+                <!-- History Title -->
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    <span class="en">Conversation History</span>
+                    <span class="ar font-arabic">سجل المحادثة</span>
+                </h2>
+                <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+            </div>
+            
+            <!-- Conversation History -->
+            <div class="flex-1 overflow-y-auto p-4" id="conversation-history">
+                <!-- History items will be inserted here -->
+            </div>
+            
+            <!-- Clear History Button -->
+            <div class="p-4 border-t dark:border-gray-700">
+                <button id="clear-history" 
+                        class="w-full px-4 py-2 text-sm text-red-600 rounded-lg border border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                    <span class="en">Clear History</span>
+                    <span class="ar font-arabic">مسح المحادثة</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="lg:pl-64 flex flex-col h-full">
+        <!-- Header -->
+        <header class="bg-white dark:bg-gray-800 shadow-sm">
+            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white flex flex-col items-center">
+                    <span>Islamic Fatwa Assistant</span>
+                    <span class="font-arabic">مساعد الفتاوى الإسلامية</span>
+                </h1>
+                <button id="mobile-sidebar-toggle" class="lg:hidden p-2">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat Area -->
+        <main class="flex-1 overflow-hidden">
+            <div class="h-full flex flex-col">
+                <!-- Messages Container -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
                     <!-- Messages will be inserted here -->
                 </div>
-                
-                <form id="question-form" class="question-form">
-                    <div class="input-group">
-                        <textarea 
-                            id="question-input" 
-                            placeholder="Type your question here..."
-                            rows="3"
-                        ></textarea>
-                        <button type="submit" class="submit-btn">
-                            Ask Question
-                        </button>
-                    </div>
-                </form>
+
+                <!-- Input Area -->
+                <div class="border-t dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
+                    <form id="question-form" class="max-w-4xl mx-auto relative">
+                        <div class="flex items-end">
+                            <div class="flex-1">
+                                <textarea id="question-input"
+                                    class="w-full rounded-lg border dark:border-gray-600 p-3 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-base"
+                                    rows="3"
+                                    style="font-family: inherit; line-height: 1.6;"
+                                    placeholder="Type your question here... | اكتب سؤالك هنا..."
+                                    dir="auto"
+                                    onkeydown="if(event.key === 'Enter' && !event.shiftKey) { 
+                                        event.preventDefault();
+                                        document.getElementById('question-form').dispatchEvent(new Event('submit'));
+                                    }"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </main>
-        
-        <footer>
-            <p>Powered by Dar Al-Ifta's Fatwa Database</p>
-        </footer>
     </div>
 
     <script>
@@ -84,8 +344,26 @@
             questionInput.value = '';
             
             try {
-                // Show loading state
-                addMessage('system', 'Thinking...');
+                // Create and show loading indicator under the question
+                const messagesDiv = document.getElementById('chat-messages');
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'message flex justify-center';
+                loadingDiv.innerHTML = `
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg px-4 py-2">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                            <span class="text-gray-700 dark:text-gray-300 en">Thinking</span>
+                            <span class="text-gray-700 dark:text-gray-300 ar font-arabic">جارٍ التفكير</span>
+                            <div class="flex space-x-1 rtl:space-x-reverse">
+                                <div class="typing-dot w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                                <div class="typing-dot w-1.5 h-1.5 bg-blue-600 rounded-full" style="animation-delay: 0.2s"></div>
+                                <div class="typing-dot w-1.5 h-1.5 bg-blue-600 rounded-full" style="animation-delay: 0.4s"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                loadingDiv.setAttribute('dir', detectTextDirection(question));
+                messagesDiv.appendChild(loadingDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 
                 // Send question to backend
                 const response = await fetch('/ask', {
@@ -99,37 +377,225 @@
                 const data = await response.json();
                 
                 // Remove loading message
-                removeLastMessage();
+                messagesDiv.removeChild(loadingDiv);
                 
-                // Add response to chat
-                addMessage('assistant', data.answer);
+                // Add response to chat with the full data object
+                addMessage('assistant', {
+                    answer: data.answer,
+                    sources: data.sources,
+                    language: data.language
+                });
                 
             } catch (error) {
                 console.error('Error:', error);
-                removeLastMessage();
+                // Remove loading message if it exists
+                const loadingDiv = messagesDiv.querySelector('.message:last-child');
+                if (loadingDiv) {
+                    messagesDiv.removeChild(loadingDiv);
+                }
                 addMessage('system', 'Sorry, there was an error processing your question.');
             }
         });
 
-        function addMessage(role, content) {
+        function addMessage(type, content) {
             const messagesDiv = document.getElementById('chat-messages');
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}-message`;
             
-            // Format the content if it contains "Sources:"
-            if (content.includes('Sources:')) {
-                const [answer, sources] = content.split('Sources:');
-                messageDiv.innerHTML = `
-                    <div class="answer-content">${marked.parse(answer.trim())}</div>
-                    <div class="sources">
-                        <strong>Sources:</strong>
-                        ${marked.parse(sources)}
-                    </div>
-                `;
+            let text, sources, direction;
+            if (type === 'assistant' && typeof content === 'object') {
+                text = content.answer;
+                sources = content.sources;
+                direction = content.language === 'ar' ? 'rtl' : 'ltr';
             } else {
-                messageDiv.innerHTML = role === 'user' ? 
-                    `<p>${content}</p>` : 
-                    `<div class="answer-content">${marked.parse(content)}</div>`;
+                text = content;
+                direction = detectTextDirection(text);
+            }
+            
+            const isArabic = direction === 'rtl';
+            
+            messageDiv.classList.add(
+                'message', 
+                `${type}-message`,
+                'p-4',
+                'rounded-lg',
+                type === 'user' ? 'shadow-[0_2px_10px_rgba(0,0,0,0.1)]' : 'shadow-sm'
+            );
+            
+            if (type === 'assistant') {
+                messageDiv.classList.add('bg-white', 'dark:bg-gray-800', 'text-gray-900', 'dark:text-gray-100');
+            } else if (type === 'user') {
+                messageDiv.classList.add('bg-blue-100', 'dark:bg-blue-900', 'text-gray-900', 'dark:text-gray-100', 'text-lg');
+            }
+            
+            messageDiv.setAttribute('dir', direction);
+            
+            if (isArabic) {
+                messageDiv.style.fontFamily = "'Noto Naskh Arabic', serif";
+                messageDiv.style.fontSize = '1.1rem';
+                messageDiv.style.lineHeight = '1.8';
+                text = text.replace(/^الجواب: /, '');
+            } else {
+                text = text.replace(/^Answer: /, '');
+            }
+            
+            if (type === 'assistant') {
+                // Create answer div with markdown
+                const answerDiv = document.createElement('div');
+                answerDiv.classList.add('answer-section');
+                answerDiv.style.opacity = '1';
+                
+                // Create sources div if there are sources
+                const sourcesDiv = sources && sources.length > 0 ? document.createElement('div') : null;
+                if (sourcesDiv) {
+                    sourcesDiv.classList.add('sources-section');
+                    sourcesDiv.style.opacity = '1';
+                    sourcesDiv.style.display = 'none'; // Hide initially
+                }
+                
+                // Add empty divs to DOM first
+                messageDiv.appendChild(answerDiv);
+                if (sourcesDiv) {
+                    messageDiv.appendChild(sourcesDiv);
+                }
+
+                // Prepare the content
+                const parsedAnswer = marked.parse(text);
+                const sourcesTitle = isArabic ? 'المصادر' : 'Sources';
+                const sourcesContent = sources && sources.length > 0 ? 
+                    `<p class="text-gray-700 dark:text-gray-300">${sourcesTitle}</p><ul>` + 
+                    sources.map(source => 
+                        `<li><a href="${source.url}" target="_blank" rel="noopener noreferrer" class="text-blue-600 dark:text-blue-400 hover:underline">${source.title}</a></li>`
+                    ).join('') + 
+                    '</ul>' : '';
+
+                // Typewriter effect function
+                function typeWriter(element, content, onComplete) {
+                    let tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = content;
+                    
+                    // Split content into HTML tags and text
+                    const tokens = [];
+                    let currentToken = '';
+                    let inTag = false;
+                    let listType = null;
+                    let listCounter = 0;
+                    let currentListItem = '';
+                    let isArabic = element.closest('[dir="rtl"]') !== null;
+                    
+                    // Function to convert to Arabic numbers if needed
+                    function formatNumber(num) {
+                        if (!isArabic) return num + '. ';
+                        const arabicNumbers = {
+                            '0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤',
+                            '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩'
+                        };
+                        return num.toString().replace(/[0-9]/g, d => arabicNumbers[d]) + ' . ';
+                    }
+                    
+                    for (let i = 0; i < content.length; i++) {
+                        const char = content[i];
+                        if (char === '<') {
+                            if (currentToken) tokens.push({ type: 'text', content: currentToken });
+                            currentToken = char;
+                            inTag = true;
+                            
+                            // Look ahead to check tag type
+                            const nextContent = content.substring(i, i + 10);
+                            if (nextContent.startsWith('<ol')) {
+                                listType = 'ordered';
+                                listCounter = 0;
+                            } else if (nextContent.startsWith('<ul')) {
+                                listType = 'unordered';
+                            } else if (nextContent.startsWith('</ol>') || nextContent.startsWith('</ul>')) {
+                                listType = null;
+                                listCounter = 0;
+                            } else if (nextContent.startsWith('<li>')) {
+                                if (listType === 'ordered') {
+                                    listCounter++;
+                                    currentListItem = formatNumber(listCounter);
+                                } else if (listType === 'unordered' && !element.classList.contains('sources-section')) {
+                                    currentListItem = '• ';
+                                }
+                            }
+                        } else if (char === '>' && inTag) {
+                            currentToken += char;
+                            tokens.push({ type: 'tag', content: currentToken });
+                            
+                            // Add list marker after the <li> tag, ensuring no extra space
+                            if (currentToken === '<li>' && currentListItem) {
+                                tokens.push({ type: 'text', content: currentListItem });
+                                currentListItem = '';
+                            }
+                            
+                            currentToken = '';
+                            inTag = false;
+                        } else {
+                            currentToken += char;
+                            if (!inTag && (i === content.length - 1 || content[i + 1] === '<')) {
+                                // Trim any leading spaces in list items to prevent extra spacing
+                                if (listType) {
+                                    currentToken = currentToken.trimStart();
+                                }
+                                tokens.push({ type: 'text', content: currentToken });
+                                currentToken = '';
+                            }
+                        }
+                    }
+                    
+                    let currentIndex = 0;
+                    let currentTextIndex = 0;
+                    let currentText = '';
+                    
+                    function type() {
+                        if (currentIndex >= tokens.length) {
+                            if (onComplete) onComplete();
+                            return;
+                        }
+
+                        const token = tokens[currentIndex];
+                        
+                        if (token.type === 'tag') {
+                            // Add full tag immediately
+                            currentText += token.content;
+                            currentIndex++;
+                            element.innerHTML = currentText;
+                            requestAnimationFrame(type);
+                        } else {
+                            // Type text character by character
+                            if (currentTextIndex < token.content.length) {
+                                currentText += token.content[currentTextIndex];
+                                currentTextIndex++;
+                                element.innerHTML = currentText;
+                                setTimeout(type, 15);
+                            } else {
+                                currentTextIndex = 0;
+                                currentIndex++;
+                                requestAnimationFrame(type);
+                            }
+                        }
+                    }
+                    
+                    // Start typing with error handling
+                    try {
+                        type();
+                    } catch (error) {
+                        console.error('Typewriter error:', error);
+                        // Fallback: show all content immediately
+                        element.innerHTML = content;
+                        if (onComplete) onComplete();
+                    }
+                }
+
+                // Start typewriter for answer
+                typeWriter(answerDiv, parsedAnswer, () => {
+                    // After answer is complete, show sources if they exist
+                    if (sourcesDiv && sourcesContent) {
+                        sourcesDiv.style.display = 'block'; // Show sources section after answer is complete
+                        typeWriter(sourcesDiv, sourcesContent);
+                    }
+                });
+            } else {
+                messageDiv.textContent = text;
             }
             
             messagesDiv.appendChild(messageDiv);
@@ -142,6 +608,113 @@
             if (lastMessage) {
                 messagesDiv.removeChild(lastMessage);
             }
+        }
+
+        // Language and RTL handling
+        const langToggle = document.getElementById('lang-toggle');
+        const html = document.documentElement;
+        const placeholders = {
+            en: {
+                question: "Type your question here...",
+                clearHistory: "Clear History",
+                thinking: "Thinking...",
+                title: "Islamic Fatwa Assistant"
+            },
+            ar: {
+                question: "اكتب سؤالك هنا...",
+                clearHistory: "مسح المحادثة",
+                thinking: "جاري التفكير...",
+                title: "مساعد الفتاوى الإسلامية"
+            }
+        };
+
+        let currentLang = 'en';
+
+        // Add this helper function for number conversion
+        function convertToArabicNumbers(text) {
+            const numbers = {
+                '0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤',
+                '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩'
+            };
+            return text.replace(/[0-9]/g, digit => numbers[digit] || digit);
+        }
+
+        // Update language toggle handler
+        langToggle.addEventListener('click', () => {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            const dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            
+            // Update HTML direction and language
+            html.setAttribute('dir', dir);
+            html.setAttribute('lang', currentLang);
+            
+            // Update sidebar position based on language
+            const sidebar = document.getElementById('sidebar');
+            if (currentLang === 'ar') {
+                sidebar.classList.remove('left-0');
+                sidebar.classList.add('right-0');
+            } else {
+                sidebar.classList.remove('right-0');
+                sidebar.classList.add('left-0');
+            }
+            
+            // Update content padding
+            const mainContent = document.querySelector('.lg\\:pl-64');
+            if (currentLang === 'ar') {
+                mainContent.classList.remove('lg:pl-64');
+                mainContent.classList.add('lg:pr-64');
+            } else {
+                mainContent.classList.remove('lg:pr-64');
+                mainContent.classList.add('lg:pl-64');
+            }
+            
+            // Update text and placeholders
+            document.getElementById('question-input').placeholder = placeholders[currentLang].question;
+            document.getElementById('clear-history').textContent = placeholders[currentLang].clearHistory;
+            document.querySelector('h1').textContent = placeholders[currentLang].title;
+            
+            // Convert numbers in existing messages if Arabic
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => {
+                if (currentLang === 'ar') {
+                    msg.innerHTML = convertToArabicNumbers(msg.innerHTML);
+                }
+            });
+            
+            updateMessageStyles();
+        });
+
+        function updateMessageStyles() {
+            const messages = document.querySelectorAll('.message');
+            messages.forEach(msg => {
+                if (currentLang === 'ar') {
+                    msg.style.textAlign = 'right';
+                    if (msg.classList.contains('user-message')) {
+                        msg.style.marginLeft = '0';
+                        msg.style.marginRight = 'auto';
+                    } else if (msg.classList.contains('assistant-message')) {
+                        msg.style.marginRight = '0';
+                        msg.style.marginLeft = 'auto';
+                    }
+                } else {
+                    msg.style.textAlign = 'left';
+                    if (msg.classList.contains('user-message')) {
+                        msg.style.marginRight = '0';
+                        msg.style.marginLeft = 'auto';
+                    } else if (msg.classList.contains('assistant-message')) {
+                        msg.style.marginLeft = '0';
+                        msg.style.marginRight = 'auto';
+                    }
+                }
+            });
+        }
+
+        function detectTextDirection(text) {
+            // First character range for Arabic
+            const arabic = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+            // Check if the first non-whitespace character is Arabic
+            const firstChar = text.trim().charAt(0);
+            return arabic.test(firstChar) ? 'rtl' : 'ltr';
         }
     </script>
 </body>

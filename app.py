@@ -13,22 +13,25 @@ def index():
 def ask():
     try:
         data = request.get_json()
-        question = data.get('question')
-        
+        question = data.get('question', '')
         if not question:
             return jsonify({'error': 'No question provided'}), 400
+
+        # Get response from service
+        response = ask_bot(question)
         
-        # Get answer from the Q&A system
-        answer = ask_bot(question)
+        # Add history to response
+        response['history'] = {
+            'messages': memory.to_dict(),
+            'total_messages': len(memory.messages),
+            'has_previous': len(memory.messages) > 0
+        }
         
-        # Return both answer and conversation history
-        return jsonify({
-            'answer': answer,
-            'history': memory.to_dict()
-        })
-    
+        return jsonify(response)
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error processing question: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/clear-history', methods=['POST'])
 def clear_history():

@@ -25,7 +25,7 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
 # Number of relevant documents to retrieve
-TOP_K = 5
+TOP_K = 3
 
 # Model Configuration
 EMBEDDING_MODEL_EN = "sentence-transformers/all-mpnet-base-v2"

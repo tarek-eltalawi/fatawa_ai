@@ -91,7 +91,7 @@ def retrieval_node(state: State) -> Dict[str, Any]:
     
     return {
         "context": "\n\n".join(answer['text'] for answer in complete_answers),
-        "sources": set(answer['source'] for answer in complete_answers)
+        "sources": list(dict.fromkeys(answer['source'] for answer in complete_answers))
     }
 
 # Answer node: uses the context and question to generate an answer.
@@ -130,6 +130,32 @@ def route_model_output(state: State) -> Literal["__end__", "tools"]:
     # Otherwise we execute the requested actions
     return "tools"
 
+def format_sources(sources, is_arabic=False):
+    """Format sources as a list of dictionaries with titles and URLs."""
+    formatted_sources = []
+    for source in sources:
+        title = extract_title_from_url(source, is_arabic)
+        formatted_sources.append({
+            "title": title,
+            "url": source
+        })
+    return formatted_sources
+
+def extract_title_from_url(url, is_arabic=False):
+    """Extract a readable title from the URL."""
+    # Remove protocol and domain
+    path = url.split('/')[-1]
+    
+    # Handle Arabic URLs
+    if 'ar/' in url or is_arabic:
+        # Replace common Arabic URL patterns
+        path = path.replace('-', ' ').replace('_', ' ').replace('%20', ' ')
+        return path
+    
+    # Handle English URLs
+    title = path.split('.')[0].replace('-', ' ').replace('_', ' ')
+    return title.title()
+
 def ask_bot(question: str):
     # Detect language of the question
     language = detect_language(question)
@@ -153,17 +179,19 @@ def ask_bot(question: str):
 
     # Run the graph.
     final_state = graph.invoke(initial_state)
-    labels = RESPONSE_LABELS[language]
-    result = f"\n{labels['answer']}: {final_state.get('response').content}"
+    answer = final_state.get('response').content
     sources = final_state.get('sources', [])
-    if sources:
-        result += f"\n\n{labels['sources']}:"
-        for source in sources:
-            result += f"\n- {source}"
-    return result
+    
+    # Return structured response
+    return {
+        "answer": answer,
+        "sources": format_sources(sources, language == 'ar'),
+        "language": language
+    }
 
 # for direct testing of this file
-# if __name__ == "__main__":
+if __name__ == "__main__":
     # print(ask_bot("هل يجوز قراءة القرآن بدون وضوء؟"))
     # print(ask_bot("ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟"))
-    # print(ask_bot("can I send Christmas greetings to Christian friends?"))
+    print(ask_bot("can I send Christmas greetings to Christian friends?"))
+    # print(ask_bot("can I listen to music?"))

@@ -136,6 +136,8 @@ python query.py
 - experiment with different models and different prompt engineering, QWEN is doing good but not that good specially for arabic
 - separate scraping from ingesting logic
 - make the project more readable and modular
+- use pydantic AI with langgraph
+- convert scrapping and ingesting to be a langgraph graph
 
 #### Tools:
 - [x] Translation tool

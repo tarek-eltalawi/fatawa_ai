@@ -11,10 +11,13 @@ PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT")
 PINECONE_INDEX_NAME_AR = "fatawa-in-arabic"
 PINECONE_INDEX_NAME_EN = "fatawa-in-english"
 
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+
 # Ollama Configuration
 OLLAMA_BASE_URL = "http://localhost:11434"
-QWEN_MODEL = "qwen2.5:7b"
+QWEN_MODEL = "qwen2.5:14b"
 JAIS_MODEL = "jwnder/jais-adaptive:7b"
+DEEPSEEK_MODEL = "deepseek/deepseek-r1:free"
 TEMPERATURE = 0.1
 
 # Vector Dimensions for embeddings
@@ -25,7 +28,7 @@ CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
 # Number of relevant documents to retrieve
-TOP_K = 3
+TOP_K = 5
 
 # Model Configuration
 EMBEDDING_MODEL_EN = "sentence-transformers/all-mpnet-base-v2"

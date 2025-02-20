@@ -32,36 +32,36 @@ def retrieval_node(state: State) -> Dict[str, Any]:
     index_name = PINECONE_INDEX_NAME_EN if state.language == 'en' else PINECONE_INDEX_NAME_AR
     pinecone_manager = PineconeManager(index_name=index_name)
     
-    # Get initial matches
-    retrieved_docs = pinecone_manager.retrieve_docs(question)
-    relevant_docs = [doc for doc in retrieved_docs if doc.score >= 0.5]
+    # Get initial matches - now getting top 10 chunks
+    retrieved_chunks = pinecone_manager.retrieve_docs(question)
     
     # Track processed IDs and collect chunk IDs
     processed_ids = set()
     chunk_ids_to_fetch = []
     doc_chunks_map = {}  # Map base_ids to their chunks info
     
-    # First pass: collect all chunk IDs we need to fetch
-    for doc in relevant_docs:
-        base_id = doc.id.rsplit('-', 1)[0]
-        if base_id in processed_ids:
-            continue
+    # First pass: collect all chunk IDs and initialize score tracking
+    for chunk in retrieved_chunks:
+        doc_id = chunk.id.rsplit('-', 1)[0]
+        if doc_id not in processed_ids:
+            processed_ids.add(doc_id)
             
-        processed_ids.add(base_id)
-        total_chunks = int(doc.metadata.get('total_chunks', 1))
-        
-        # Store the first chunk we already have
-        current_chunk_idx = int(doc.id.rsplit('-', 1)[1])
-        doc_chunks_map[base_id] = {
-            'total': total_chunks,
-            'chunks': {current_chunk_idx: doc.metadata['text']},
-            'source': doc.metadata.get('source', 'No source available')  # Store source with the document
-        }
-        
-        # Collect other chunk IDs we need
-        for i in range(total_chunks):
-            if i != current_chunk_idx:
-                chunk_ids_to_fetch.append(f"{base_id}-{i}")
+            # Store the first chunk we already have
+            current_chunk_idx = int(chunk.id.rsplit('-', 1)[1])
+            doc_chunks_map[doc_id] = {
+                'total': int(chunk.metadata.get('total_chunks', 1)),
+                'chunks': {current_chunk_idx: chunk.metadata['text']},
+                'source': chunk.metadata.get('source', 'No source available'),
+                'score': chunk.score  # Store score directly in the document info
+            }
+
+            # Collect other chunk IDs we need
+            for i in range(doc_chunks_map[doc_id]['total']):
+                if i != current_chunk_idx:
+                    chunk_ids_to_fetch.append(f"{doc_id}-{i}")
+        else:
+            # Update score if current chunk has higher score
+            doc_chunks_map[doc_id]['score'] = max(doc_chunks_map[doc_id]['score'], chunk.score)
     
     # Batch fetch all needed chunks
     if chunk_ids_to_fetch:
@@ -69,28 +69,34 @@ def retrieval_node(state: State) -> Dict[str, Any]:
         
         # Process fetched chunks
         for vector_id, vector_data in fetched_vectors.items():
-            base_id, chunk_idx = vector_id.rsplit('-', 1)
-            if base_id in doc_chunks_map:
-                doc_chunks_map[base_id]['chunks'][int(chunk_idx)] = vector_data.metadata['text']
+            doc_id, chunk_idx = vector_id.rsplit('-', 1)
+            if doc_id in doc_chunks_map:
+                doc_chunks_map[doc_id]['chunks'][int(chunk_idx)] = vector_data.metadata['text']
     
-    # Assemble complete answers
+    # Assemble complete answers and sort by score
     complete_answers = []
-    for base_id, chunk_info in doc_chunks_map.items():
+    for doc_id, doc_info in doc_chunks_map.items():
         # Sort and combine chunks
         sorted_chunks = [
-            chunk_info['chunks'][i] 
-            for i in range(chunk_info['total']) 
-            if i in chunk_info['chunks']
+            doc_info['chunks'][i]
+            for i in range(doc_info['total'])
+            if i in doc_info['chunks']
         ]
         complete_answer = ' '.join(sorted_chunks)
         
         complete_answers.append({
             'text': complete_answer,
-            'source': chunk_info['source']  # Use the source stored with each document
+            'source': doc_info['source'],
+            'score': doc_info['score']
         })
     
+    # Sort by score and take top 3 for context
+    complete_answers.sort(key=lambda x: x['score'], reverse=True)
+    top_3_answers = complete_answers[:3]
+
+    # Keep all sources but use only top 3 for context
     return {
-        "context": "\n\n".join(answer['text'] for answer in complete_answers),
+        "context": "\n\n".join(answer['text'] for answer in top_3_answers),
         "sources": list(dict.fromkeys(answer['source'] for answer in complete_answers))
     }
 
@@ -108,7 +114,7 @@ def model_node(state: State) -> Dict[str, Any]:
         question=state.question,
         history=state.history
     )
-    
+
     # Initialize LLM
     llm = ChatOllama(model=model_name, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     response = llm.invoke(prompt)
@@ -191,7 +197,16 @@ def ask_bot(question: str):
 
 # for direct testing of this file
 if __name__ == "__main__":
+    # result = ask_bot("ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟")
+    # result = ask_bot("هل يجوز قراءة القرآن بدون وضوء؟")
+    # result = ask_bot("can I send Christmas greetings to Christian friends?")
+    result = ask_bot("can I greet Christians?")
+    # result = ask_bot("can I listen to music?")
+    answer = result["answer"]
+    sources = result["sources"]
+    print(answer)
+    print(sources)
     # print(ask_bot("هل يجوز قراءة القرآن بدون وضوء؟"))
     # print(ask_bot("ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟"))
-    print(ask_bot("can I send Christmas greetings to Christian friends?"))
+    # print(ask_bot("can I send Christmas greetings to Christian friends?"))
     # print(ask_bot("can I listen to music?"))

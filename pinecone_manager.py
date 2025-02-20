@@ -95,27 +95,6 @@ class PineconeManager:
         )
         return results.matches
 
-    def get_vector_by_id(self, vector_id: str) -> Optional[Dict]:
-        """Retrieve a vector by its ID."""
-        index = self.pc.Index(self.index_name)
-        try:
-            result = index.fetch(
-                ids=[vector_id],
-                namespace=self.namespace
-            )
-            vectors = result.get('vectors', {})
-            if vector_id in vectors:
-                vector_data = vectors[vector_id]
-                return type('VectorMatch', (), {
-                    'id': vector_id,
-                    'metadata': vector_data.get('metadata', {}),
-                    'score': 1.0  # Since this is a direct fetch, score is 1.0
-                })
-            return None
-        except Exception as e:
-            print(f"Error fetching vector {vector_id}: {str(e)}")
-            return None
-
     def batch_fetch_vectors(self, vector_ids: List[str]) -> Dict[str, Any]:
         """Fetch multiple vectors in a single request."""
         index = self.pc.Index(self.index_name)

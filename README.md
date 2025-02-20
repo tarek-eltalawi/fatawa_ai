@@ -31,7 +31,7 @@ PINECONE_INDEX_NAME=your_index_name
 
 4. Run Ollama locally with the qwen2.5 model:
 ```bash
-ollama run qwen2.5:7b
+ollama run qwen2.5:14b
 ```
 
 ## Data Collection
@@ -128,16 +128,20 @@ python query.py
 
 ## Upcoming Features
 
-- handle arabic format in the answers and make it more presentable (written correctly from right to left)
-- convert the graph to be a async graph so that if more nodes are added, they can run in parallel
-- add more nodes as tools to retrieve extra sources if needed
-- one idea is to translate questions to be able to search in the other vector database (curently arabic vector database has much more data than english)
-- add apps interface for both ios and android
-- experiment with different models and different prompt engineering, QWEN is doing good but not that good specially for arabic
-- separate scraping from ingesting logic
-- make the project more readable and modular
-- use pydantic AI with langgraph
-- convert scrapping and ingesting to be a langgraph graph
+- [x] get top 10 for example from vector database, this returns the top cunks, then construct the answer and choose top 3 answers as sources
+- [x] handle arabic format in the answers and make it more presentable (written correctly from right to left)
+- [x] support franco arabic
+- [ ] we can also use top 3 for building the context but use the top 5 for sources links (if it makes sense by the llm)
+- [ ] test using a powerful llm hosted on a cloud service
+- [ ] experiment with different models and different prompt engineering, QWEN is doing good but not that good specially for arabic
+- [ ] convert the graph to be a async graph so that if more nodes are added, they can run in parallel
+- [ ] add more nodes as tools to retrieve extra sources if needed
+- [ ] one idea is to translate questions to be able to search in the other vector database (curently arabic vector database has much more data than english)
+- [ ] add apps interface for both ios and android
+- [ ] separate scraping from ingesting logic
+- [ ] make the project more readable and modular
+- [ ] use pydantic AI with langgraph
+- [ ] convert scrapping and ingesting to be a langgraph graph
 
 #### Tools:
 - [x] Translation tool

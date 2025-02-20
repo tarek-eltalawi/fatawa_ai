@@ -717,5 +717,15 @@
             return arabic.test(firstChar) ? 'rtl' : 'ltr';
         }
     </script>
+
+    <!-- YAMLI CODE START -->
+    <script type="text/javascript" src="https://api.yamli.com/js/yamli_api.js"></script>
+    <script type="text/javascript">
+    if (typeof(Yamli) == "object" && Yamli.init( { uiLanguage: "en" , startMode: "onOrUserDefault" } ))
+    {
+        Yamli.yamlify( "question-input", { settingsPlacement: "bottomLeft" } );
+    }
+    </script>
+    <!-- YAMLI CODE END -->
 </body>
 </html> 

@@ -456,3 +456,17 @@ footer {
 [dir="rtl"] .sidebar-title {
     font-family: 'Noto Naskh Arabic', serif;
 }
+
+/* Logo styles */
+.logo-container img {
+    height: 64px;
+    width: auto;
+    transition: filter 0.2s ease;
+}
+
+/* If your logo needs different treatment in dark mode */
+@media (prefers-color-scheme: dark) {
+    .dark .logo-container img.dark-invert {
+        filter: invert(1);
+    }
+}

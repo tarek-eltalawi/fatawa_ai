@@ -36,11 +36,10 @@ Question: {question}
 Instructions:
 1. Provide a clear and concise answer based on the available context
 2. Format the answer in numbered list please
-3. If sources are available, cite them appropriately
-4. Always respond in English
-5. Do not summarize or leave information out, if there are multiple opinions, present all of them while maintaining neutrality
-6. Do not include any data from your own knowledge, only use the context
-7. If you cannot find relevant information in the context, respond with: "I cannot answer this question as I don't find relevant information in the provided context."
+3. Always respond in English
+4. Do not summarize or leave information out, if there are multiple opinions, present all of them while maintaining neutrality
+5. Do not include any data from your own knowledge, only use the context
+6. If you cannot find relevant information in the context, respond with: "I cannot answer this question as I don't find relevant information in the provided context."
 
 Answer:
 """

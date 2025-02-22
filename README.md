@@ -29,7 +29,20 @@ PINECONE_ENVIRONMENT=your_environment
 PINECONE_INDEX_NAME=your_index_name
 ```
 
-4. Run Ollama locally with the qwen2.5 model:
+4. Install Ollama locally if you don't have it
+
+```bash
+Brew install ollama
+```
+
+5. Start Ollama server
+
+```bash
+ollama serve
+```
+
+6. Run Ollama locally with the qwen2.5 model:
+
 ```bash
 ollama run qwen2.5:14b
 ```

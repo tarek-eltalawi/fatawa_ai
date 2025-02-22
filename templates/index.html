@@ -58,8 +58,9 @@
             font-family: 'Noto Naskh Arabic', serif;
         }
         
+        /* Remove the global RTL message alignment */
         [dir="rtl"] .message {
-            text-align: right;
+            text-align: unset;
         }
 
         /* Message styles */
@@ -74,9 +75,13 @@
             background: white;
         }
 
-        .dark .message {
-            border-color: #2d2d2d;
-            background: #1f1f1f;
+        /* Keep message content aligned based on its own direction */
+        .message[dir="ltr"] {
+            text-align: left;
+        }
+
+        .message[dir="rtl"] {
+            text-align: right;
         }
 
         @keyframes messageAppear {
@@ -362,9 +367,6 @@
                     }
                 }
             }
-            
-            // Update message styles
-            updateMessageStyles();
         });
 
         // Update form submission to include language
@@ -376,6 +378,12 @@
             const source = document.getElementById('source-select').value;
             
             if (!question) return;
+            
+            // Disable language toggle button
+            const langToggleBtn = document.getElementById('lang-toggle');
+            langToggleBtn.disabled = true;
+            langToggleBtn.style.opacity = '0.5';
+            langToggleBtn.style.cursor = 'not-allowed';
             
             // Add user question to chat
             addMessage('user', question);
@@ -637,7 +645,19 @@
                     // After answer is complete, show sources if they exist
                     if (sourcesDiv && sourcesContent) {
                         sourcesDiv.style.display = 'block'; // Show sources section after answer is complete
-                        typeWriter(sourcesDiv, sourcesContent);
+                        typeWriter(sourcesDiv, sourcesContent, () => {
+                            // Re-enable language toggle button after all typing is complete
+                            const langToggleBtn = document.getElementById('lang-toggle');
+                            langToggleBtn.disabled = false;
+                            langToggleBtn.style.opacity = '';
+                            langToggleBtn.style.cursor = '';
+                        });
+                    } else {
+                        // Re-enable language toggle button if no sources
+                        const langToggleBtn = document.getElementById('lang-toggle');
+                        langToggleBtn.disabled = false;
+                        langToggleBtn.style.opacity = '';
+                        langToggleBtn.style.cursor = '';
                     }
                 });
             } else {

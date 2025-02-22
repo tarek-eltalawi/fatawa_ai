@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Islamic Fatwa Assistant</title>
     
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/static/images/logo.png">
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Marked.js for markdown -->
@@ -25,16 +28,19 @@
                     },
                     colors: {
                         primary: {
-                            50: '#f5f7ff',
-                            100: '#ebf0ff',
-                            200: '#d6e0ff',
-                            300: '#b3c6ff',
-                            400: '#809fff',
-                            500: '#4d78ff',
-                            600: '#1a51ff',
-                            700: '#0033cc',
-                            800: '#002699',
-                            900: '#001a66',
+                            DEFAULT: '#005e54',
+                            light: '#007c70',
+                            dark: '#004a42',
+                        },
+                        secondary: {
+                            DEFAULT: '#4a90e2',
+                            light: '#6ba3e7',
+                            dark: '#3b7bc9',
+                        },
+                        dark: {
+                            DEFAULT: '#1f2937',
+                            lighter: '#374151',
+                            darker: '#111827',
                         }
                     }
                 }
@@ -46,11 +52,11 @@
         /* Base styles */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #fafafa;
+            background-color: #f8fafc;
         }
 
         .dark body {
-            background-color: #1a1a1a;
+            background-color: #111827;
         }
 
         /* RTL specific styles */
@@ -73,6 +79,49 @@
             animation: messageAppear 0.3s ease forwards;
             border: 1px solid #e5e7eb;
             background: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .message:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .dark .message {
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        .user-message {
+            position: relative;
+            font-size: var(--ds-font-size-l);
+            line-height: var(--ds-line-height-l);
+            color: #262626;
+            padding: calc((44px - var(--ds-line-height-l)) / 2) 20px;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background-color: #eff6ff;
+            border-radius: 14px;
+            max-width: fit-content;
+            position: relative;
+        }
+
+        .dark .user-message {
+            background: #004a42 !important;
+        }
+
+        .assistant-message {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #262424 !important;
+        }
+
+        .dark .assistant-message {
+            background: transparent !important;
+            border: none !important;
+            color: #e5e7eb !important;
         }
 
         /* Keep message content aligned based on its own direction */
@@ -104,26 +153,53 @@
 
         /* Sidebar styles */
         .sidebar {
-            background: white;
+            background: #f9fbff !important;
             border-right: 1px solid #e5e7eb;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+            position: fixed !important;
+            left: 0 !important;
+            right: auto !important;
+            transform: none !important;
+            transition: transform 0.2s ease-in-out !important;
         }
 
         .dark .sidebar {
-            background: #1f1f1f;
-            border-color: #2d2d2d;
+            background: #1f2937;
+            border-color: #374151;
+        }
+
+        [dir="rtl"] .sidebar {
+            right: auto !important;
+            left: 0 !important;
+            border-right: 1px solid #e5e7eb;
+            border-left: none;
+        }
+
+        .sidebar.hidden {
+            transform: translateX(-100%) !important;
         }
 
         /* Input styles */
         .input-container {
-            border: 1px solid #e5e7eb;
-            background: white;
+            border: none !important;
+            background: transparent !important;
             border-radius: 1rem;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .input-container:focus-within {
+            border: none !important;
+            box-shadow: none !important;
         }
 
         .dark .input-container {
-            border-color: #2d2d2d;
-            background: #1f1f1f;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .dark .input-container:focus-within {
+            border: none !important;
+            box-shadow: none !important;
         }
 
         #question-input {
@@ -133,12 +209,15 @@
             padding: 1rem;
             border: none;
             outline: none;
-            background: transparent;
-            color: #1a1a1a;
+            background: rgb(243 244 246) !important;
+            color: #1f2937;
+            transition: all 0.2s ease;
+            border-radius: 1.5rem !important;
         }
 
         .dark #question-input {
             color: #e5e7eb;
+            background: #374151 !important;
         }
 
         [dir="rtl"] #question-input {
@@ -150,15 +229,32 @@
             transition: all 0.2s;
             border-radius: 0.5rem;
             padding: 0.5rem 1rem;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-primary {
-            background: #4d78ff;
+            background: #005e54;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #1a51ff;
+            background: #007c70;
+        }
+
+        .dark .btn-primary {
+            background: #007c70;
+        }
+
+        .dark .btn-primary:hover {
+            background: #009688;
         }
 
         /* Language specific display */
@@ -174,7 +270,146 @@
         }
 
         .dark .sources-section {
-            border-color: #2d2d2d;
+            border-color: #374151;
+        }
+
+        .sources-section a {
+            color: #4a90e2;
+            transition: all 0.2s ease;
+        }
+
+        .sources-section a:hover {
+            color: #3b7bc9;
+            text-decoration: underline;
+        }
+
+        .dark .sources-section a {
+            color: #6ba3e7;
+        }
+
+        .dark .sources-section a:hover {
+            color: #4a90e2;
+        }
+
+        /* Loading indicator styles */
+        .typing-dot {
+            animation: typingDot 1s infinite;
+            background: #005e54;
+        }
+
+        .dark .typing-dot {
+            background: #007c70;
+        }
+
+        @keyframes typingDot {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        /* Assistant message icon */
+        .assistant-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 12px;
+            object-fit: cover;
+            flex-shrink: 0;
+            order: 0 !important;
+        }
+
+        [dir="rtl"] .assistant-icon {
+            margin-right: 12px !important;
+            margin-left: 0;
+            order: 0 !important;
+        }
+
+        .assistant-message-container {
+            display: flex;
+            align-items: flex-start;
+            flex-direction: row !important;
+            gap: 4px;
+        }
+
+        [dir="rtl"] .assistant-message-container {
+            flex-direction: row !important;
+        }
+
+        #sidebar-toggle {
+            position: absolute !important;
+            right: 1rem !important;
+            left: auto !important;
+            top: 1rem !important;
+        }
+
+        [dir="rtl"] #sidebar-toggle {
+            right: 1rem !important;
+            left: auto !important;
+        }
+
+        #show-sidebar {
+            position: fixed !important;
+            left: 1rem !important;
+            right: auto !important;
+            top: 1rem !important;
+        }
+
+        [dir="rtl"] #show-sidebar {
+            left: 1rem !important;
+            right: auto !important;
+        }
+
+        #source-select {
+            width: auto;
+            min-width: 200px;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+            padding: 0.5rem 1rem;
+            background-color: rgb(219 234 254) !important;
+            color: #4d6bfe;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: none !important;
+        }
+
+        #source-select::-ms-expand {
+            display: none;
+        }
+
+        .dark #source-select {
+            border-color: #374151;
+            background-color: #1f2937 !important;
+            color: #e5e7eb;
+        }
+
+        #source-select option {
+            background-color: rgb(219 234 254);
+            color: #4d6bfe;
+        }
+
+        .dark #source-select option {
+            background-color: #1f2937;
+            color: #e5e7eb;
+        }
+
+        /* Question header styles */
+        #question-header {
+            background: transparent !important;
+            padding: 1.5rem 0 !important;
+        }
+
+        #question-header h2 {
+            max-width: 80%;
+            margin: 0 auto;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            line-height: 1.75;
+        }
+
+        [dir="rtl"] #question-header h2 {
+            font-family: 'Noto Naskh Arabic', serif;
+            font-size: 1.1rem;
+            line-height: 1.8;
         }
     </style>
 </head>
@@ -187,7 +422,7 @@
                     <span class="en">Islamic Fatwa Assistant</span>
                     <span class="ar font-arabic">مساعد الفتاوى الإسلامية</span>
                 </h1>
-                <button id="sidebar-toggle" class="btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                <button id="sidebar-toggle" class="btn hover:bg-gray-200 dark:hover:bg-gray-700">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
@@ -202,11 +437,11 @@
             <!-- Settings -->
             <div class="mt-auto">
                 <div class="grid grid-cols-2 gap-2" style="direction: ltr;">
-                    <button id="lang-toggle" class="btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <button id="lang-toggle" class="btn hover:bg-gray-200 dark:hover:bg-gray-700">
                         <span class="en">عربي</span>
                         <span class="ar">English</span>
                     </button>
-                    <button id="theme-toggle" class="btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <button id="theme-toggle" class="btn hover:bg-gray-200 dark:hover:bg-gray-700">
                         <i class="fas fa-moon dark:hidden"></i>
                         <i class="fas fa-sun hidden dark:block"></i>
                     </button>
@@ -216,7 +451,7 @@
     </div>
 
     <!-- Show Sidebar Button -->
-    <button id="show-sidebar" class="fixed top-4 btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hidden z-50" style="left: 1rem;">
+    <button id="show-sidebar" class="fixed top-4 btn hover:bg-gray-200 dark:hover:bg-gray-700 hidden z-50" style="left: 1rem;">
         <i class="fas fa-chevron-right"></i>
     </button>
 
@@ -225,18 +460,23 @@
         <!-- Chat Area -->
         <main class="flex-1 overflow-hidden relative">
             <div class="h-full flex flex-col">
+                <!-- Question Header -->
+                <div id="question-header" class="text-center py-4 opacity-0 transition-opacity duration-300">
+                    <h2 class="text-xl font-bold text-gray-900 dark:text-white"></h2>
+                </div>
+                
                 <!-- Messages Container -->
                 <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-6">
                     <!-- Messages will be inserted here -->
                 </div>
 
                 <!-- Input Area -->
-                <div class="border-t dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4 pb-8">
-                    <div class="max-w-3xl mx-auto">
+                <div class="dark:border-gray-800 bg-transparent dark:bg-transparent p-4 pb-8">
+                    <div class="max-w-2xl mx-auto">
                         <form id="question-form" class="relative">
-                            <div class="input-container border-b-2 border-b-gray-200 dark:border-b-gray-700">
+                            <div class="input-container">
                                 <textarea id="question-input"
-                                    class="w-full dark:text-white min-h-[60px]"
+                                    class="w-full dark:text-white min-h-[70px]"
                                     rows="2"
                                     placeholder="Type your question here..."
                                     dir="auto"
@@ -264,6 +504,23 @@
         const html = document.documentElement;
         let sources = { en: [], ar: [] };
         let translations = {};
+        let isAnimating = false;  // Add state to track animation
+
+        // Function to toggle input state
+        function toggleInputState(disabled) {
+            const questionInput = document.getElementById('question-input');
+            const langToggleBtn = document.getElementById('lang-toggle');
+            
+            // Disable/enable input
+            questionInput.disabled = disabled;
+            questionInput.style.opacity = disabled ? '0.5' : '1';
+            questionInput.style.cursor = disabled ? 'not-allowed' : 'text';
+            
+            // Disable/enable language toggle
+            langToggleBtn.disabled = disabled;
+            langToggleBtn.style.opacity = disabled ? '0.5' : '1';
+            langToggleBtn.style.cursor = disabled ? 'not-allowed' : 'pointer';
+        }
 
         // Fetch translations from backend
         async function fetchTranslations(lang) {
@@ -373,17 +630,23 @@
         document.getElementById('question-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
+            if (isAnimating) return; // Prevent submission if animation is in progress
+            
             const questionInput = document.getElementById('question-input');
             const question = questionInput.value.trim();
             const source = document.getElementById('source-select').value;
             
             if (!question) return;
             
-            // Disable language toggle button
-            const langToggleBtn = document.getElementById('lang-toggle');
-            langToggleBtn.disabled = true;
-            langToggleBtn.style.opacity = '0.5';
-            langToggleBtn.style.cursor = 'not-allowed';
+            isAnimating = true; // Set animation state
+            toggleInputState(true); // Disable input
+            
+            // Update question header
+            const questionHeader = document.getElementById('question-header');
+            const headerTitle = questionHeader.querySelector('h2');
+            headerTitle.textContent = question;
+            headerTitle.setAttribute('dir', detectTextDirection(question));
+            questionHeader.style.opacity = '1';
             
             // Add user question to chat
             addMessage('user', question);
@@ -477,22 +740,22 @@
             
             if (type === 'assistant') {
                 messageDiv.classList.add('bg-white', 'dark:bg-gray-800', 'text-gray-900', 'dark:text-gray-100');
-            } else if (type === 'user') {
-                messageDiv.classList.add('bg-blue-100', 'dark:bg-blue-900', 'text-gray-900', 'dark:text-gray-100', 'text-lg');
-            }
-            
-            messageDiv.setAttribute('dir', direction);
-            
-            if (isArabic) {
-                messageDiv.style.fontFamily = "'Noto Naskh Arabic', serif";
-                messageDiv.style.fontSize = '1.1rem';
-                messageDiv.style.lineHeight = '1.8';
-                text = text.replace(/^الجواب: /, '');
-            } else {
-                text = text.replace(/^Answer: /, '');
-            }
-            
-            if (type === 'assistant') {
+                
+                // Create assistant message container with icon
+                const containerDiv = document.createElement('div');
+                containerDiv.className = 'assistant-message-container';
+                
+                // Add assistant icon
+                const iconImg = document.createElement('img');
+                iconImg.src = '/static/images/logo.png';
+                iconImg.className = 'assistant-icon';
+                iconImg.alt = 'Assistant';
+                containerDiv.appendChild(iconImg);
+                
+                // Create content container
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'flex-1';
+                
                 // Create answer div with markdown
                 const answerDiv = document.createElement('div');
                 answerDiv.classList.add('answer-section');
@@ -506,10 +769,28 @@
                     sourcesDiv.style.display = 'none'; // Hide initially
                 }
                 
-                // Add empty divs to DOM first
-                messageDiv.appendChild(answerDiv);
+                // Add divs to content container
+                contentDiv.appendChild(answerDiv);
                 if (sourcesDiv) {
-                    messageDiv.appendChild(sourcesDiv);
+                    contentDiv.appendChild(sourcesDiv);
+                }
+                
+                // Add content container to message container
+                containerDiv.appendChild(contentDiv);
+                
+                // Add container to message div
+                messageDiv.appendChild(containerDiv);
+
+                // Set direction and text formatting
+                messageDiv.setAttribute('dir', direction);
+                
+                if (isArabic) {
+                    messageDiv.style.fontFamily = "'Noto Naskh Arabic', serif";
+                    messageDiv.style.fontSize = '1.1rem';
+                    messageDiv.style.lineHeight = '1.8';
+                    text = text.replace(/^الجواب: /, '');
+                } else {
+                    text = text.replace(/^Answer: /, '');
                 }
 
                 // Prepare the content
@@ -646,22 +927,35 @@
                     if (sourcesDiv && sourcesContent) {
                         sourcesDiv.style.display = 'block'; // Show sources section after answer is complete
                         typeWriter(sourcesDiv, sourcesContent, () => {
-                            // Re-enable language toggle button after all typing is complete
-                            const langToggleBtn = document.getElementById('lang-toggle');
-                            langToggleBtn.disabled = false;
-                            langToggleBtn.style.opacity = '';
-                            langToggleBtn.style.cursor = '';
+                            // Re-enable everything after all typing is complete
+                            isAnimating = false; // Reset animation state
+                            toggleInputState(false); // Re-enable input and language toggle
                         });
                     } else {
-                        // Re-enable language toggle button if no sources
-                        const langToggleBtn = document.getElementById('lang-toggle');
-                        langToggleBtn.disabled = false;
-                        langToggleBtn.style.opacity = '';
-                        langToggleBtn.style.cursor = '';
+                        // Re-enable everything if no sources
+                        isAnimating = false; // Reset animation state
+                        toggleInputState(false); // Re-enable input and language toggle
                     }
                 });
-            } else {
+            } else if (type === 'user') {
+                messageDiv.classList.add('bg-blue-100', 'dark:bg-blue-900', 'text-gray-900', 'dark:text-gray-100', 'text-lg');
+                messageDiv.setAttribute('dir', direction);
+                
+                if (isArabic) {
+                    messageDiv.style.fontFamily = "'Noto Naskh Arabic', serif";
+                    messageDiv.style.fontSize = '1.1rem';
+                    messageDiv.style.lineHeight = '1.8';
+                }
+                
                 messageDiv.textContent = text;
+                // Only apply RTL positioning for new messages in Arabic mode
+                if (currentLang === 'ar') {
+                    messageDiv.style.marginRight = 'auto';
+                    messageDiv.style.marginLeft = '280px';
+                } else {
+                    messageDiv.style.marginLeft = 'auto';
+                    messageDiv.style.marginRight = '280px';
+                }
             }
             
             messagesDiv.appendChild(messageDiv);
@@ -721,13 +1015,12 @@
                 isSidebarVisible = show;
                 
                 if (!isSidebarVisible) {
-                    sidebar.classList.add('-translate-x-64');
+                    sidebar.classList.add('hidden');
                     mainContent.classList.remove('lg:pl-64');
                     mainContent.classList.add('lg:pl-0');
                     showSidebarBtn.classList.remove('hidden');
-                    showSidebarBtn.style.left = '1rem';  // Always keep it on the left
                 } else {
-                    sidebar.classList.remove('-translate-x-64');
+                    sidebar.classList.remove('hidden');
                     mainContent.classList.add('lg:pl-64');
                     mainContent.classList.remove('lg:pl-0');
                     showSidebarBtn.classList.add('hidden');

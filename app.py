@@ -5,20 +5,68 @@ from service import ask_bot, memory
 app = Flask(__name__)
 CORS(app)
 
+# Define available sources
+SOURCES = {
+    'en': [
+        {'id': 'dar-al-iftaa-en', 'name': "Egypt's Dar Al Iftaa"}
+    ],
+    'ar': [
+        {'id': 'dar-al-iftaa-ar', 'name': "دار الإفتاء المصرية"}
+    ]
+}
+
+# Define translations
+TRANSLATIONS = {
+    'en': {
+        'placeholder': "Type your question here...",
+        'thinking': "Thinking",
+        'title': "Islamic Fatwa Assistant",
+        'sources_title': "Sources",
+        'error_no_question': "No question provided",
+        'error_internal': "Internal server error",
+        'history_cleared': "Conversation history cleared"
+    },
+    'ar': {
+        'placeholder': "...اكتب سؤالك هنا",
+        'thinking': "جارٍ التفكير",
+        'title': "مساعد الفتاوى الإسلامية",
+        'sources_title': "المصادر",
+        'error_no_question': "لم يتم إدخال سؤال",
+        'error_internal': "خطأ في النظام",
+        'history_cleared': "تم مسح سجل المحادثة"
+    }
+}
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/translations/<lang>', methods=['GET'])
+def get_translations(lang):
+    """Return translations for specified language."""
+    if lang not in TRANSLATIONS:
+        lang = 'en'  # Default to English if language not found
+    return jsonify(TRANSLATIONS[lang])
+
+@app.route('/sources', methods=['GET'])
+def get_sources():
+    """Return available sources for both languages."""
+    return jsonify(SOURCES)
 
 @app.route('/ask', methods=['POST'])
 def ask():
     try:
         data = request.get_json()
         question = data.get('question', '')
+        lang = data.get('language', 'en')
+        
         if not question:
-            return jsonify({'error': 'No question provided'}), 400
+            return jsonify({
+                'error': TRANSLATIONS[lang]['error_no_question']
+            }), 400
 
         # Get response from service
-        response = ask_bot(question)
+        response = ask_bot(question, lang)
         
         # Add history to response
         response['history'] = {
@@ -31,13 +79,18 @@ def ask():
 
     except Exception as e:
         app.logger.error(f"Error processing question: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        return jsonify({
+            'error': TRANSLATIONS[lang]['error_internal']
+        }), 500
 
 @app.route('/clear-history', methods=['POST'])
 def clear_history():
     try:
+        lang = request.json.get('language', 'en')
         memory.clear()
-        return jsonify({'message': 'Conversation history cleared'})
+        return jsonify({
+            'message': TRANSLATIONS[lang]['history_cleared']
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

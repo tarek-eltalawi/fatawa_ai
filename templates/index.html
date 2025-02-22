@@ -12,7 +12,7 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Arabic font - Noto Naskh Arabic -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
         tailwind.config = {
@@ -21,7 +21,21 @@
                 extend: {
                     fontFamily: {
                         arabic: ['Noto Naskh Arabic', 'serif'],
-                        sans: ['Roboto', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f5f7ff',
+                            100: '#ebf0ff',
+                            200: '#d6e0ff',
+                            300: '#b3c6ff',
+                            400: '#809fff',
+                            500: '#4d78ff',
+                            600: '#1a51ff',
+                            700: '#0033cc',
+                            800: '#002699',
+                            900: '#001a66',
+                        }
                     }
                 }
             }
@@ -29,6 +43,16 @@
     </script>
 
     <style>
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fafafa;
+        }
+
+        .dark body {
+            background-color: #1a1a1a;
+        }
+
         /* RTL specific styles */
         [dir="rtl"] {
             font-family: 'Noto Naskh Arabic', serif;
@@ -38,23 +62,6 @@
             text-align: right;
         }
 
-        /* Loading animation */
-        .typing-dot {
-            animation: typing 1.4s infinite;
-            opacity: 0.2;
-        }
-
-        @keyframes typing {
-            0%, 100% { 
-                opacity: 0.2; 
-                transform: translateY(0);
-            }
-            50% { 
-                opacity: 1;
-                transform: translateY(-2px);
-            }
-        }
-
         /* Message styles */
         .message {
             max-width: 48rem;
@@ -62,7 +69,14 @@
             margin-right: auto;
             opacity: 0;
             transform: translateY(20px);
-            animation: messageAppear 0.5s ease forwards;
+            animation: messageAppear 0.3s ease forwards;
+            border: 1px solid #e5e7eb;
+            background: white;
+        }
+
+        .dark .message {
+            border-color: #2d2d2d;
+            background: #1f1f1f;
         }
 
         @keyframes messageAppear {
@@ -75,229 +89,159 @@
         .answer-section {
             line-height: 1.6;
             opacity: 0;
-            animation: typeAnswer 0.8s ease forwards;
+            animation: typeAnswer 0.5s ease forwards;
         }
 
         @keyframes typeAnswer {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        [dir="rtl"] .answer-section {
-            font-family: 'Noto Naskh Arabic', serif;
-            font-size: 1.1rem;
-            line-height: 1.8;
+        /* Sidebar styles */
+        .sidebar {
+            background: white;
+            border-right: 1px solid #e5e7eb;
         }
 
-        /* Question input styles */
+        .dark .sidebar {
+            background: #1f1f1f;
+            border-color: #2d2d2d;
+        }
+
+        /* Input styles */
+        .input-container {
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .dark .input-container {
+            border-color: #2d2d2d;
+            background: #1f1f1f;
+        }
+
         #question-input {
-            font-size: 1.1rem;
-            line-height: 1.8;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            padding: 1rem;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: #1a1a1a;
+        }
+
+        .dark #question-input {
+            color: #e5e7eb;
         }
 
         [dir="rtl"] #question-input {
             font-family: 'Noto Naskh Arabic', serif;
-            font-size: 1.1rem;
-            line-height: 1.8;
         }
 
-        /* Sources section styles */
-        .sources-section {
-            margin-top: 1.5rem !important;
-            padding-top: 1.5rem !important;
-            border-top: 1px solid #e5e7eb !important;
-            font-family: 'Roboto', sans-serif !important;
+        /* Button styles */
+        .btn {
+            transition: all 0.2s;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
         }
 
-        [dir="rtl"] .sources-section {
-            direction: rtl !important;
-            text-align: right !important;
-            font-family: 'Noto Naskh Arabic', serif !important;
+        .btn-primary {
+            background: #4d78ff;
+            color: white;
         }
 
-        [dir="rtl"] .sources-section ul {
-            padding-right: 1.5rem !important;
-            padding-left: 0 !important;
-        }
-
-        .dark .sources-section {
-            border-color: #374151 !important;
-        }
-
-        .sources-section ul {
-            list-style-type: disc !important;
-            padding-left: 1.5rem !important;
-            margin-top: 0.5rem !important;
-        }
-
-        .sources-section li {
-            margin: 0.5rem 0 !important;
-            display: list-item !important;
-        }
-
-        .sources-section a {
-            color: #2563eb !important;
-            text-decoration: none !important;
-            transition: all 0.2s !important;
-        }
-
-        .dark .sources-section a {
-            color: #60a5fa !important;
-        }
-
-        .sources-section a:hover {
-            text-decoration: underline !important;
+        .btn-primary:hover {
+            background: #1a51ff;
         }
 
         /* Language specific display */
-        [dir="ltr"] .ar {
-            display: none !important;
+        [dir="ltr"] .ar { display: none !important; }
+        [dir="rtl"] .en { display: none !important; }
+        [dir="rtl"] .ar { display: block !important; }
+
+        /* Sources section */
+        .sources-section {
+            border-top: 1px solid #e5e7eb;
+            margin-top: 1rem;
+            padding-top: 1rem;
         }
 
-        [dir="rtl"] .en {
-            display: none !important;
-        }
-
-        [dir="rtl"] .ar {
-            display: block !important;
-        }
-
-        .user-message {
-            position: relative;
-        }
-
-        .user-message::after {
-            content: '';
-            position: absolute;
-            bottom: -10px;
-            right: 20px;
-            width: 0;
-            height: 0;
-            border: 10px solid transparent;
-            border-top-color: rgb(219 234 254);
-            border-bottom: 0;
-        }
-
-        .dark .user-message::after {
-            border-top-color: rgb(30 58 138);
-        }
-
-        [dir="rtl"] .user-message::after {
-            right: auto;
-            left: 20px;
-        }
-
-        /* List styles */
-        .message ol, .message ul {
-            list-style: none !important;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        .message li {
-            display: flex !important;
-            align-items: flex-start !important;
-            margin: 0.5rem 0 !important;
-        }
-
-        .message li::before {
-            display: none !important;  /* Hide the CSS counter */
-        }
-
-        /* Sources section specific list styles */
-        .sources-section ul {
-            list-style-type: disc !important;
-            padding-left: 1.5rem !important;
-        }
-
-        .sources-section li {
-            display: list-item !important;
-        }
-
-        .sources-section li::before {
-            content: none !important;
+        .dark .sources-section {
+            border-color: #2d2d2d;
         }
     </style>
 </head>
-<body class="h-full bg-gray-50 dark:bg-gray-900">
+<body class="h-full dark:bg-gray-900">
     <!-- Sidebar -->
-    <div class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-200 ease-in-out lg:translate-x-0" 
-         id="sidebar">
-        <div class="flex flex-col h-full">
-            <!-- Theme Toggle -->
-            <div class="p-4 flex justify-between items-center border-b dark:border-gray-700">
-                <!-- History Title -->
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    <span class="en">Conversation History</span>
-                    <span class="ar font-arabic">سجل المحادثة</span>
-                </h2>
-                <button id="theme-toggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                    <i class="fas fa-moon dark:hidden"></i>
-                    <i class="fas fa-sun hidden dark:block"></i>
+    <div class="fixed inset-y-0 left-0 w-64 sidebar transform transition-transform duration-200 ease-in-out" id="sidebar">
+        <div class="flex flex-col h-full p-4">
+            <div class="flex items-center justify-between mb-6" style="direction: ltr;">
+                <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    <span class="en">Islamic Fatwa Assistant</span>
+                    <span class="ar font-arabic">مساعد الفتاوى الإسلامية</span>
+                </h1>
+                <button id="sidebar-toggle" class="btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
             
-            <!-- Conversation History -->
-            <div class="flex-1 overflow-y-auto p-4" id="conversation-history">
-                <!-- History items will be inserted here -->
+            <!-- Source Selection -->
+            <div class="mb-4">
+                <select id="source-select" class="w-full rounded-lg border dark:border-gray-600 p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+                    <!-- Sources will be populated dynamically -->
+                </select>
             </div>
-            
-            <!-- Clear History Button -->
-            <div class="p-4 border-t dark:border-gray-700">
-                <button id="clear-history" 
-                        class="w-full px-4 py-2 text-sm text-red-600 rounded-lg border border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
-                    <span class="en">Clear History</span>
-                    <span class="ar font-arabic">مسح المحادثة</span>
-                </button>
+
+            <!-- Settings -->
+            <div class="mt-auto">
+                <div class="grid grid-cols-2 gap-2" style="direction: ltr;">
+                    <button id="lang-toggle" class="btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <span class="en">عربي</span>
+                        <span class="ar">English</span>
+                    </button>
+                    <button id="theme-toggle" class="btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <i class="fas fa-moon dark:hidden"></i>
+                        <i class="fas fa-sun hidden dark:block"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="lg:pl-64 flex flex-col h-full">
-        <!-- Header -->
-        <header class="bg-white dark:bg-gray-800 shadow-sm">
-            <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                <h1 class="text-2xl font-semibold text-gray-900 dark:text-white flex flex-col items-center">
-                    <span>Islamic Fatwa Assistant</span>
-                    <span class="font-arabic">مساعد الفتاوى الإسلامية</span>
-                </h1>
-                <button id="mobile-sidebar-toggle" class="lg:hidden p-2">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </header>
+    <!-- Show Sidebar Button -->
+    <button id="show-sidebar" class="fixed top-4 btn bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 hidden z-50" style="left: 1rem;">
+        <i class="fas fa-chevron-right"></i>
+    </button>
 
+    <!-- Main Content -->
+    <div class="lg:pl-64 flex flex-col h-full transition-all duration-200 ease-in-out" id="main-content">
         <!-- Chat Area -->
-        <main class="flex-1 overflow-hidden">
+        <main class="flex-1 overflow-hidden relative">
             <div class="h-full flex flex-col">
                 <!-- Messages Container -->
-                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-6">
                     <!-- Messages will be inserted here -->
                 </div>
 
                 <!-- Input Area -->
-                <div class="border-t dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-                    <form id="question-form" class="max-w-4xl mx-auto relative">
-                        <div class="flex items-end">
-                            <div class="flex-1">
+                <div class="border-t dark:border-gray-800 bg-gray-50 dark:bg-gray-900 p-4 pb-8">
+                    <div class="max-w-3xl mx-auto">
+                        <form id="question-form" class="relative">
+                            <div class="input-container border-b-2 border-b-gray-200 dark:border-b-gray-700">
                                 <textarea id="question-input"
-                                    class="w-full rounded-lg border dark:border-gray-600 p-3 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-base"
-                                    rows="3"
-                                    style="font-family: inherit; line-height: 1.6;"
-                                    placeholder="Type your question here... | اكتب سؤالك هنا..."
+                                    class="w-full dark:text-white min-h-[60px]"
+                                    rows="2"
+                                    placeholder="Type your question here..."
                                     dir="auto"
                                     onkeydown="if(event.key === 'Enter' && !event.shiftKey) { 
                                         event.preventDefault();
                                         document.getElementById('question-form').dispatchEvent(new Event('submit'));
                                     }"></textarea>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </main>
@@ -310,30 +254,126 @@
             gfm: true
         });
 
-        // Add clear history functionality
-        document.getElementById('clear-history').addEventListener('click', async () => {
+        // Initialize language state
+        let currentLang = 'en';
+        const html = document.documentElement;
+        let sources = { en: [], ar: [] };
+        let translations = {};
+
+        // Fetch translations from backend
+        async function fetchTranslations(lang) {
             try {
-                const response = await fetch('/clear-history', {
-                    method: 'POST'
-                });
-                
-                if (response.ok) {
-                    // Clear the chat messages
-                    const messagesDiv = document.getElementById('chat-messages');
-                    messagesDiv.innerHTML = '';
-                    addMessage('system', 'Conversation history cleared');
-                }
+                const response = await fetch(`/translations/${lang}`);
+                translations = await response.json();
+                updateTranslations();
             } catch (error) {
-                console.error('Error:', error);
-                addMessage('system', 'Failed to clear conversation history');
+                console.error('Error fetching translations:', error);
             }
+        }
+
+        // Update UI with current translations
+        function updateTranslations() {
+            // Update placeholder
+            document.getElementById('question-input').placeholder = translations.placeholder;
+            
+            // Update title
+            document.querySelector('h1').innerHTML = `
+                <span class="${currentLang === 'en' ? 'en' : 'ar font-arabic'}">${translations.title}</span>
+            `;
+        }
+
+        // Fetch sources from backend
+        async function fetchSources() {
+            try {
+                const response = await fetch('/sources');
+                sources = await response.json();
+                updateSourceSelect();
+            } catch (error) {
+                console.error('Error fetching sources:', error);
+            }
+        }
+
+        // Update source select options based on current language
+        function updateSourceSelect() {
+            const sourceSelect = document.getElementById('source-select');
+            sourceSelect.innerHTML = '';
+            
+            const currentSources = sources[currentLang] || [];
+            currentSources.forEach(source => {
+                const option = document.createElement('option');
+                option.value = source.id;
+                option.textContent = source.name;
+                option.className = currentLang === 'en' ? 'en' : 'ar font-arabic';
+                sourceSelect.appendChild(option);
+            });
+        }
+
+        // Initialize page
+        async function initializePage() {
+            await Promise.all([
+                fetchTranslations(currentLang),
+                fetchSources()
+            ]);
+        }
+
+        // Call initialization on page load
+        initializePage();
+
+        // Add language toggle functionality
+        document.getElementById('lang-toggle').addEventListener('click', async () => {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            const dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+            
+            // Update HTML direction and language
+            html.setAttribute('dir', dir);
+            html.setAttribute('lang', currentLang);
+            
+            // Update textarea alignment
+            const questionInput = document.getElementById('question-input');
+            questionInput.style.textAlign = currentLang === 'ar' ? 'right' : 'left';
+            
+            // Fetch and update translations
+            await fetchTranslations(currentLang);
+            
+            // Update source select
+            updateSourceSelect();
+            
+            // Toggle Yamli script
+            const yamliScript = document.getElementById('yamli-script');
+            if (currentLang === 'ar') {
+                if (!yamliScript) {
+                    const script = document.createElement('script');
+                    script.id = 'yamli-script';
+                    script.type = 'text/javascript';
+                    script.src = 'https://api.yamli.com/js/yamli_api.js';
+                    document.body.appendChild(script);
+                    script.onload = () => {
+                        if (typeof(Yamli) === "object") {
+                            Yamli.init({ uiLanguage: "en", startMode: "onOrUserDefault" });
+                            Yamli.yamlify("question-input", { settingsPlacement: "bottomLeft" });
+                        }
+                    };
+                }
+            } else {
+                if (yamliScript) {
+                    yamliScript.remove();
+                    if (typeof(Yamli) === "object" && Yamli.destroy) {
+                        Yamli.destroy("question-input");
+                    }
+                }
+            }
+            
+            // Update message styles
+            updateMessageStyles();
         });
 
+        // Update form submission to include language
         document.getElementById('question-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const questionInput = document.getElementById('question-input');
             const question = questionInput.value.trim();
+            const source = document.getElementById('source-select').value;
             
             if (!question) return;
             
@@ -347,17 +387,14 @@
                 // Create and show loading indicator under the question
                 const messagesDiv = document.getElementById('chat-messages');
                 const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'message flex justify-center';
+                loadingDiv.className = 'flex justify-center w-full';
                 loadingDiv.innerHTML = `
-                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg px-4 py-2">
-                        <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                            <span class="text-gray-700 dark:text-gray-300 en">Thinking</span>
-                            <span class="text-gray-700 dark:text-gray-300 ar font-arabic">جارٍ التفكير</span>
-                            <div class="flex space-x-1 rtl:space-x-reverse">
-                                <div class="typing-dot w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
-                                <div class="typing-dot w-1.5 h-1.5 bg-blue-600 rounded-full" style="animation-delay: 0.2s"></div>
-                                <div class="typing-dot w-1.5 h-1.5 bg-blue-600 rounded-full" style="animation-delay: 0.4s"></div>
-                            </div>
+                    <div class="inline-flex items-center bg-white dark:bg-gray-800 rounded-full px-3 py-1.5 shadow-sm">
+                        <span class="text-gray-700 dark:text-gray-300 ${currentLang === 'en' ? 'en' : 'ar font-arabic'}">${translations.thinking}</span>
+                        <div class="flex space-x-1 rtl:space-x-reverse ml-1.5 rtl:ml-0 rtl:mr-1.5">
+                            <div class="typing-dot w-1 h-1 bg-blue-600 rounded-full"></div>
+                            <div class="typing-dot w-1 h-1 bg-blue-600 rounded-full" style="animation-delay: 0.2s"></div>
+                            <div class="typing-dot w-1 h-1 bg-blue-600 rounded-full" style="animation-delay: 0.4s"></div>
                         </div>
                     </div>
                 `;
@@ -369,15 +406,24 @@
                 const response = await fetch('/ask', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ question }),
+                    body: JSON.stringify({
+                        question: question,
+                        source: source,
+                        language: currentLang
+                    })
                 });
                 
                 const data = await response.json();
                 
                 // Remove loading message
                 messagesDiv.removeChild(loadingDiv);
+                
+                if (data.error) {
+                    addMessage('system', data.error);
+                    return;
+                }
                 
                 // Add response to chat with the full data object
                 addMessage('assistant', {
@@ -393,7 +439,7 @@
                 if (loadingDiv) {
                     messagesDiv.removeChild(loadingDiv);
                 }
-                addMessage('system', 'Sorry, there was an error processing your question.');
+                addMessage('system', translations.error_internal);
             }
         });
 
@@ -610,80 +656,6 @@
             }
         }
 
-        // Language and RTL handling
-        const langToggle = document.getElementById('lang-toggle');
-        const html = document.documentElement;
-        const placeholders = {
-            en: {
-                question: "Type your question here...",
-                clearHistory: "Clear History",
-                thinking: "Thinking...",
-                title: "Islamic Fatwa Assistant"
-            },
-            ar: {
-                question: "اكتب سؤالك هنا...",
-                clearHistory: "مسح المحادثة",
-                thinking: "جاري التفكير...",
-                title: "مساعد الفتاوى الإسلامية"
-            }
-        };
-
-        let currentLang = 'en';
-
-        // Add this helper function for number conversion
-        function convertToArabicNumbers(text) {
-            const numbers = {
-                '0': '٠', '1': '١', '2': '٢', '3': '٣', '4': '٤',
-                '5': '٥', '6': '٦', '7': '٧', '8': '٨', '9': '٩'
-            };
-            return text.replace(/[0-9]/g, digit => numbers[digit] || digit);
-        }
-
-        // Update language toggle handler
-        langToggle.addEventListener('click', () => {
-            currentLang = currentLang === 'en' ? 'ar' : 'en';
-            const dir = currentLang === 'ar' ? 'rtl' : 'ltr';
-            
-            // Update HTML direction and language
-            html.setAttribute('dir', dir);
-            html.setAttribute('lang', currentLang);
-            
-            // Update sidebar position based on language
-            const sidebar = document.getElementById('sidebar');
-            if (currentLang === 'ar') {
-                sidebar.classList.remove('left-0');
-                sidebar.classList.add('right-0');
-            } else {
-                sidebar.classList.remove('right-0');
-                sidebar.classList.add('left-0');
-            }
-            
-            // Update content padding
-            const mainContent = document.querySelector('.lg\\:pl-64');
-            if (currentLang === 'ar') {
-                mainContent.classList.remove('lg:pl-64');
-                mainContent.classList.add('lg:pr-64');
-            } else {
-                mainContent.classList.remove('lg:pr-64');
-                mainContent.classList.add('lg:pl-64');
-            }
-            
-            // Update text and placeholders
-            document.getElementById('question-input').placeholder = placeholders[currentLang].question;
-            document.getElementById('clear-history').textContent = placeholders[currentLang].clearHistory;
-            document.querySelector('h1').textContent = placeholders[currentLang].title;
-            
-            // Convert numbers in existing messages if Arabic
-            const messages = document.querySelectorAll('.message');
-            messages.forEach(msg => {
-                if (currentLang === 'ar') {
-                    msg.innerHTML = convertToArabicNumbers(msg.innerHTML);
-                }
-            });
-            
-            updateMessageStyles();
-        });
-
         function updateMessageStyles() {
             const messages = document.querySelectorAll('.message');
             messages.forEach(msg => {
@@ -716,6 +688,35 @@
             const firstChar = text.trim().charAt(0);
             return arabic.test(firstChar) ? 'rtl' : 'ltr';
         }
+
+        // Add sidebar toggle functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebarToggle = document.getElementById('sidebar-toggle');
+            const showSidebarBtn = document.getElementById('show-sidebar');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('main-content');
+            let isSidebarVisible = true;
+
+            function toggleSidebar(show) {
+                isSidebarVisible = show;
+                
+                if (!isSidebarVisible) {
+                    sidebar.classList.add('-translate-x-64');
+                    mainContent.classList.remove('lg:pl-64');
+                    mainContent.classList.add('lg:pl-0');
+                    showSidebarBtn.classList.remove('hidden');
+                    showSidebarBtn.style.left = '1rem';  // Always keep it on the left
+                } else {
+                    sidebar.classList.remove('-translate-x-64');
+                    mainContent.classList.add('lg:pl-64');
+                    mainContent.classList.remove('lg:pl-0');
+                    showSidebarBtn.classList.add('hidden');
+                }
+            }
+
+            sidebarToggle.addEventListener('click', () => toggleSidebar(false));
+            showSidebarBtn.addEventListener('click', () => toggleSidebar(true));
+        });
     </script>
 
     <!-- YAMLI CODE START -->

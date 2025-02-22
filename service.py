@@ -9,7 +9,7 @@ from langgraph.graph import add_messages
 
 from config import PINECONE_INDEX_NAME_AR, PINECONE_INDEX_NAME_EN, QWEN_MODEL, OLLAMA_BASE_URL, RESPONSE_LABELS, TEMPERATURE
 from pinecone_manager import PineconeManager
-from tools import TOOLS, detect_language
+from tools import TOOLS
 from memory import ConversationMemory
 from prompts import ARABIC_PROMPT, ENGLISH_PROMPT
 
@@ -162,10 +162,7 @@ def extract_title_from_url(url, is_arabic=False):
     title = path.split('.')[0].replace('-', ' ').replace('_', ' ')
     return title.title()
 
-def ask_bot(question: str):
-    # Detect language of the question
-    language = detect_language(question)
-    
+def ask_bot(question: str, language: str = 'en'):
     # Build the state graph.
     graph_builder = StateGraph(State)
     graph_builder.add_node("retrieval", retrieval_node)

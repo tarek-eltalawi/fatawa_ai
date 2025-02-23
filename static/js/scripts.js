@@ -514,56 +514,23 @@ function addMessage(type, content) {
         
         if (isArabic) {
             messageDiv.style.fontFamily = "'Noto Naskh Arabic', serif";
-            messageDiv.style.fontSize = '1.1rem';
-            messageDiv.style.lineHeight = '1.8';
+            // messageDiv.style.fontSize = '1.1rem';
+            // messageDiv.style.lineHeight = '1.8';
         }
         
         messageDiv.textContent = text;
         // Only apply RTL positioning for new messages in Arabic mode
         if (currentLang === 'ar') {
             messageDiv.style.marginRight = 'auto';
-            messageDiv.style.marginLeft = '280px';
+            messageDiv.style.marginLeft = '20%';
         } else {
             messageDiv.style.marginLeft = 'auto';
-            messageDiv.style.marginRight = '280px';
+            messageDiv.style.marginRight = '20%';
         }
     }
     
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
-}
-
-function removeLastMessage() {
-    const messagesDiv = document.getElementById('chat-messages');
-    const lastMessage = messagesDiv.lastElementChild;
-    if (lastMessage) {
-        messagesDiv.removeChild(lastMessage);
-    }
-}
-
-function updateMessageStyles() {
-    const messages = document.querySelectorAll('.message');
-    messages.forEach(msg => {
-        if (currentLang === 'ar') {
-            msg.style.textAlign = 'right';
-            if (msg.classList.contains('user-message')) {
-                msg.style.marginLeft = '0';
-                msg.style.marginRight = 'auto';
-            } else if (msg.classList.contains('assistant-message')) {
-                msg.style.marginRight = '0';
-                msg.style.marginLeft = 'auto';
-            }
-        } else {
-            msg.style.textAlign = 'left';
-            if (msg.classList.contains('user-message')) {
-                msg.style.marginRight = '0';
-                msg.style.marginLeft = 'auto';
-            } else if (msg.classList.contains('assistant-message')) {
-                msg.style.marginLeft = '0';
-                msg.style.marginRight = 'auto';
-            }
-        }
-    });
 }
 
 function detectTextDirection(text) {

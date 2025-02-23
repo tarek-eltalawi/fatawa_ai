@@ -154,7 +154,7 @@
 
         /* Sidebar styles */
         .sidebar {
-            background: #f9fbff !important;
+            background: #f9fbff;
             border-right: 1px solid #e5e7eb;
             box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
             position: fixed !important;
@@ -335,11 +335,24 @@
             flex-direction: row !important;
         }
 
+        #lang-toggle, #theme-toggle {
+            color: #1f2937;
+        }
+
+        .dark #lang-toggle, .dark #theme-toggle {
+            color: #ffffff;
+        }
+
         #sidebar-toggle {
             position: absolute !important;
             right: 1rem !important;
             left: auto !important;
             top: 1rem !important;
+            color: #1f2937;
+        }
+
+        .dark #sidebar-toggle {
+            color: #ffffff;
         }
 
         [dir="rtl"] #sidebar-toggle {
@@ -352,6 +365,11 @@
             left: 1rem !important;
             right: auto !important;
             top: 1rem !important;
+            color: #1f2937;
+        }
+
+        .dark #show-sidebar {
+            color: #ffffff;
         }
 
         [dir="rtl"] #show-sidebar {
@@ -379,7 +397,7 @@
 
         .dark #source-select {
             border-color: #374151;
-            background-color: #1f2937 !important;
+            background-color: #005e54 !important;
             color: #e5e7eb;
         }
 
@@ -473,7 +491,7 @@
 
                 <!-- Input Area -->
                 <div class="dark:border-gray-800 bg-transparent dark:bg-transparent p-4 pb-8">
-                    <div class="max-w-2xl mx-auto">
+                    <div class="max-w-3xl mx-auto">
                         <form id="question-form" class="relative">
                             <div class="input-container">
                                 <textarea id="question-input"
@@ -1030,6 +1048,21 @@
 
             sidebarToggle.addEventListener('click', () => toggleSidebar(false));
             showSidebarBtn.addEventListener('click', () => toggleSidebar(true));
+
+            // Add theme toggle functionality
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            
+            // Check for saved theme preference, otherwise use system preference
+            if (localStorage.getItem('theme') === 'dark' || 
+                (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+
+            // Theme toggle click handler
+            themeToggleBtn.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            });
         });
     </script>
 

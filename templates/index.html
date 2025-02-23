@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic Fatwa Assistant</title>
+    <title>Fatwa</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/static/images/logo.png">
@@ -55,12 +55,12 @@
     <!-- Sidebar -->
     <div class="fixed inset-y-0 left-0 w-64 sidebar transform transition-transform duration-200 ease-in-out" id="sidebar">
         <div class="flex flex-col h-full p-4">
-            <div class="flex items-center justify-between mb-6" style="direction: ltr;">
-                <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
-                    <span class="en">Islamic Fatwa Assistant</span>
-                    <span class="ar font-arabic">مساعد الفتاوى الإسلامية</span>
+            <div class="flex items-center justify-between mb-6">
+                <h1 class="text-xl font-semibold text-gray-900 dark:text-white text-center flex-1">
+                    <span class="en">Fatwa</span>
+                    <span class="ar font-arabic">فتوى</span>
                 </h1>
-                <button id="sidebar-toggle" class="btn hover:bg-gray-200 dark:hover:bg-gray-700">
+                <button id="sidebar-toggle" class="btn hover:bg-gray-200 dark:hover:bg-gray-700 flex-none">
                     <i class="fas fa-chevron-left"></i>
                 </button>
             </div>
@@ -129,10 +129,8 @@
     <!-- YAMLI CODE START -->
     <script type="text/javascript" src="https://api.yamli.com/js/yamli_api.js"></script>
     <script type="text/javascript">
-        if (typeof(Yamli) == "object" && Yamli.init({ uiLanguage: "en", startMode: "onOrUserDefault" })) {
-            Yamli.yamlify("question-input", { settingsPlacement: "bottomLeft" });
-        }
+        Yamli.init({ uiLanguage: "en", startMode: "on" })
     </script>
-    <!-- YAMLI CODE END -->
+    <!-- YAMLI CODE END
 </body>
 </html> 

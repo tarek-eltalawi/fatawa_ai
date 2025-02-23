@@ -39,6 +39,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Function to check if chat is empty
+    function isChatEmpty() {
+        const messagesDiv = document.getElementById('chat-messages');
+        // Check if there are any messages other than the welcome message
+        const messages = messagesDiv.children;
+        if (messages.length === 0) return true;
+        if (messages.length === 1 && messages[0].classList.contains('empty-chat-container')) return true;
+        return false;
+    }
+
+    // Function to update chat layout
+    function updateChatLayout() {
+        const messagesDiv = document.getElementById('chat-messages');
+        const inputArea = document.querySelector('.input-container').parentElement.parentElement;
+        
+        if (isChatEmpty()) {
+            // Clear existing content
+            messagesDiv.innerHTML = '';
+            
+            // Add empty state description
+            const emptyContainer = document.createElement('div');
+            emptyContainer.className = 'empty-chat-container';
+            emptyContainer.innerHTML = `
+                <div class="empty-chat-description">
+                    <img src="/static/images/logo.png" alt="Assistant" class="welcome-icon">
+                    <p class="${currentLang === 'ar' ? 'ar font-arabic' : 'en'}">
+                        ${currentLang === 'ar' ? 
+                            'مرحباً، أنا مساعد الفتاوى الإسلامية الذكي' :
+                            'Hi, I\'m Islamic fatwa AI assistant.'}
+                    </p>
+                </div>
+                <div class="disclaimer-container">
+                    <small class="${currentLang === 'ar' ? 'ar font-arabic' : 'en'}">
+                        ${currentLang === 'ar' ? 
+                            'ملاحظة: قد تحدث بعض الأخطاء في الإجابات. يرجى التحقق دائماً من المصادر المذكورة.' :
+                            'Note: Responses may occasionally contain inaccuracies. Always verify with the provided sources.'}
+                    </small>
+                </div>
+            `;
+            messagesDiv.appendChild(emptyContainer);
+            
+            inputArea.classList.add('input-area-centered');
+        } else {
+            // Remove empty state if there are messages
+            const emptyContainer = messagesDiv.querySelector('.empty-chat-container');
+            if (emptyContainer) {
+                emptyContainer.remove();
+            }
+            inputArea.classList.remove('input-area-centered');
+        }
+    }
+
+    // Update layout on page load
+    updateChatLayout();
+
     // Form submission handler
     document.getElementById('question-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -54,6 +109,14 @@ document.addEventListener('DOMContentLoaded', () => {
         
         isAnimating = true; // Set animation state
         toggleInputState(true); // Disable input
+        
+        // Remove empty state if this is the first message
+        if (isChatEmpty()) {
+            const messagesDiv = document.getElementById('chat-messages');
+            messagesDiv.innerHTML = '';
+            const inputArea = document.querySelector('.input-container').parentElement.parentElement;
+            inputArea.classList.remove('input-area-centered');
+        }
         
         // Update question header
         const questionHeader = document.getElementById('question-header');
@@ -95,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     question: question,
-                    source: source,
+                    provider: source,
                     language: currentLang
                 })
             });
@@ -208,30 +271,16 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update source select
         updateSourceSelect();
-        
-        // Toggle Yamli script
-        const yamliScript = document.getElementById('yamli-script');
-        if (currentLang === 'ar') {
-            if (!yamliScript) {
-                const script = document.createElement('script');
-                script.id = 'yamli-script';
-                script.type = 'text/javascript';
-                script.src = 'https://api.yamli.com/js/yamli_api.js';
-                document.body.appendChild(script);
-                script.onload = () => {
-                    if (typeof(Yamli) === "object") {
-                        Yamli.init({ uiLanguage: "en", startMode: "onOrUserDefault" });
-                        Yamli.yamlify("question-input", { settingsPlacement: "bottomLeft" });
-                    }
-                };
-            }
-        } else {
-            if (yamliScript) {
-                yamliScript.remove();
-                if (typeof(Yamli) === "object" && Yamli.destroy) {
-                    Yamli.destroy("question-input");
-                }
-            }
+
+        // Update layout for empty state in new language
+        if (isChatEmpty()) {
+            updateChatLayout();
+        }
+
+        if (currentLang === 'en') {
+            Yamli.deyamlify("question-input");
+        } else if (currentLang === 'ar') {
+            Yamli.yamlify("question-input", { settingsPlacement: "hide" });
         }
     });
 
@@ -272,8 +321,8 @@ function applyTheme(darkMode) {
     }
 }
 
-const applyDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-applyTheme(applyDarkMode);
+// Start with light mode
+applyTheme(false);
 
 // Configure marked.js to open links in new tab
 marked.setOptions({

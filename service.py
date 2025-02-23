@@ -25,6 +25,7 @@ class State:
     response: str = field(default_factory=str)
     history: str = field(default_factory=str)
     language: str = field(default_factory=str)
+    provider: str = field(default_factory=str)
 
 # Retrieval node: adds a "context" key based on the question.
 def retrieval_node(state: State) -> Dict[str, Any]:
@@ -162,7 +163,7 @@ def extract_title_from_url(url, is_arabic=False):
     title = path.split('.')[0].replace('-', ' ').replace('_', ' ')
     return title.title()
 
-def ask_bot(question: str, language: str = 'en'):
+def ask_bot(question: str, language: str = 'en', provider: str = ''):
     # Build the state graph.
     graph_builder = StateGraph(State)
     graph_builder.add_node("retrieval", retrieval_node)
@@ -178,7 +179,7 @@ def ask_bot(question: str, language: str = 'en'):
     history = memory.get_conversation_history()
 
     # Define the initial state with detected language
-    initial_state = State(question=question, history=history, language=language)
+    initial_state = State(question=question, history=history, language=language, provider=provider)
 
     # Run the graph.
     final_state = graph.invoke(initial_state)
@@ -196,8 +197,8 @@ def ask_bot(question: str, language: str = 'en'):
 if __name__ == "__main__":
     # result = ask_bot("ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟")
     # result = ask_bot("هل يجوز قراءة القرآن بدون وضوء؟")
-    # result = ask_bot("can I send Christmas greetings to Christian friends?")
-    result = ask_bot("can I greet Christians?")
+    result = ask_bot("ممكن أسمع موسيقى ؟", "ar")
+    # result = ask_bot("can I greet Christians?")
     # result = ask_bot("can I listen to music?")
     answer = result["answer"]
     sources = result["sources"]

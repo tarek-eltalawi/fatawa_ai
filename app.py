@@ -20,7 +20,7 @@ TRANSLATIONS = {
     'en': {
         'placeholder': "Type your question here...",
         'thinking': "Thinking",
-        'title': "Islamic Fatwa Assistant",
+        'title': "Fatwa",
         'sources_title': "Sources",
         'error_no_question': "No question provided",
         'error_internal': "Internal server error",
@@ -29,7 +29,7 @@ TRANSLATIONS = {
     'ar': {
         'placeholder': "...اكتب سؤالك هنا",
         'thinking': "جارٍ التفكير",
-        'title': "مساعد الفتاوى الإسلامية",
+        'title': "فتوى",
         'sources_title': "المصادر",
         'error_no_question': "لم يتم إدخال سؤال",
         'error_internal': "خطأ في النظام",
@@ -58,6 +58,7 @@ def ask():
     try:
         data = request.get_json()
         question = data.get('question', '')
+        provider = data.get('provider', '')
         lang = data.get('language', 'en')
         
         if not question:
@@ -66,7 +67,7 @@ def ask():
             }), 400
 
         # Get response from service
-        response = ask_bot(question, lang)
+        response = ask_bot(question, lang, provider)
         
         # Add history to response
         response['history'] = {

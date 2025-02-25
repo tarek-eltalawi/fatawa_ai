@@ -32,7 +32,7 @@ PINECONE_INDEX_NAME=your_index_name
 4. Install Ollama locally if you don't have it
 
 ```bash
-Brew install ollama
+brew install ollama
 ```
 
 5. Start Ollama server
@@ -144,7 +144,7 @@ python query.py
 - [x] get top 10 for example from vector database, this returns the top cunks, then construct the answer and choose top 3 answers as sources
 - [x] handle arabic format in the answers and make it more presentable (written correctly from right to left)
 - [x] support franco arabic
-- [ ] we can also use top 3 for building the context but use the top 5 for sources links (if it makes sense by the llm)
+- [x] we can also use top 3 for building the context but use the top 5 for sources links (if it makes sense by the llm)
 - [ ] test using a powerful llm hosted on a cloud service
 - [ ] experiment with different models and different prompt engineering, QWEN is doing good but not that good specially for arabic
 - [ ] convert the graph to be a async graph so that if more nodes are added, they can run in parallel
@@ -155,6 +155,16 @@ python query.py
 - [ ] make the project more readable and modular
 - [ ] use pydantic AI with langgraph
 - [ ] convert scrapping and ingesting to be a langgraph graph
+- [ ] add a node to revise the model's answer based on the sources, or call the model multiple times and get the best answer
+- [ ] add login/sign up and user's questions and answers history
+- [ ] create summary title and create conversation history
+- [ ] add ability to create new chat
+- [ ] store chat history in the database
+- [ ] add scratchpad in the response section
+- [ ] need to add integration testing and canary scenarios after each release
+- [ ] check graph rags if better than vector db
+- [ ] i want to preprocess the questions first, maybe build the correct question if it a follow up question, then decide whether its an islamic question or normal, if islamic then pass it to the retrieval node, if not then pass it to the normal question answering node.
+- [ ] reduce the hallucinations as much as possible specially in arabic
 
 #### Tools:
 - [x] Translation tool

@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Optional
 from langchain_huggingface import HuggingFaceEmbeddings
 from pinecone import Pinecone, ServerlessSpec
-from text_utils import preprocess_text
+from utils import preprocess_text
 from config import (
     PINECONE_API_KEY,
     PINECONE_ENVIRONMENT,

@@ -7,8 +7,9 @@ from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
 
-from config import PINECONE_INDEX_NAME_AR, PINECONE_INDEX_NAME_EN, QWEN_MODEL, OLLAMA_BASE_URL, RESPONSE_LABELS, TEMPERATURE
+from config import PINECONE_INDEX_NAME_AR, PINECONE_INDEX_NAME_EN, QWEN_MODEL, OLLAMA_BASE_URL, TEMPERATURE
 from pinecone_manager import PineconeManager
+from utils import format_sources, process_context
 from tools import TOOLS
 from memory import ConversationMemory
 from prompts import ARABIC_PROMPT, ENGLISH_PROMPT
@@ -26,8 +27,8 @@ class State:
     history: str = field(default_factory=str)
     language: str = field(default_factory=str)
     provider: str = field(default_factory=str)
+    raw_answers: List[Dict[str, Any]] = field(default_factory=list)
 
-# Retrieval node: adds a "context" key based on the question.
 def retrieval_node(state: State) -> Dict[str, Any]:
     question = state.question
     index_name = PINECONE_INDEX_NAME_EN if state.language == 'en' else PINECONE_INDEX_NAME_AR
@@ -74,7 +75,6 @@ def retrieval_node(state: State) -> Dict[str, Any]:
             if doc_id in doc_chunks_map:
                 doc_chunks_map[doc_id]['chunks'][int(chunk_idx)] = vector_data.metadata['text']
     
-    # Assemble complete answers and sort by score
     complete_answers = []
     for doc_id, doc_info in doc_chunks_map.items():
         # Sort and combine chunks
@@ -84,6 +84,15 @@ def retrieval_node(state: State) -> Dict[str, Any]:
             if i in doc_info['chunks']
         ]
         complete_answer = ' '.join(sorted_chunks)
+
+        # remove questions from the context supplied to llm
+        if "answer:" in complete_answer.lower():
+            complete_answer = complete_answer.lower().split("answer:", 1)[1].strip()
+        elif "الجواب: " in complete_answer:
+            complete_answer = complete_answer.split("الجواب: ", 1)[1].strip()
+        
+        # Fix spaces
+        complete_answer = complete_answer.replace("\xa0", " ")
         
         complete_answers.append({
             'text': complete_answer,
@@ -91,17 +100,24 @@ def retrieval_node(state: State) -> Dict[str, Any]:
             'score': doc_info['score']
         })
     
-    # Sort by score and take top 3 for context
+    # Sort by score
     complete_answers.sort(key=lambda x: x['score'], reverse=True)
-    top_3_answers = complete_answers[:3]
-
-    # Keep all sources but use only top 3 for context
+    
     return {
-        "context": "\n\n".join(answer['text'] for answer in top_3_answers),
+        "raw_answers": complete_answers,
         "sources": list(dict.fromkeys(answer['source'] for answer in complete_answers))
     }
 
-# Answer node: uses the context and question to generate an answer.
+def postprocess_node(state: State) -> Dict[str, Any]:
+    """Process and optimize the context before sending to the model."""
+    # Process the raw answers to get optimized context
+    processed_answers = process_context(state.raw_answers)
+    
+    # Create the final context
+    return {
+        "context": "\n\n".join(answer['text'] for answer in processed_answers)
+    }
+
 def model_node(state: State) -> Dict[str, Any]:
     # Choose model and prompt based on language
     model_name = QWEN_MODEL
@@ -137,42 +153,23 @@ def route_model_output(state: State) -> Literal["__end__", "tools"]:
     # Otherwise we execute the requested actions
     return "tools"
 
-def format_sources(sources, is_arabic=False):
-    """Format sources as a list of dictionaries with titles and URLs."""
-    formatted_sources = []
-    for source in sources:
-        title = extract_title_from_url(source, is_arabic)
-        formatted_sources.append({
-            "title": title,
-            "url": source
-        })
-    return formatted_sources
-
-def extract_title_from_url(url, is_arabic=False):
-    """Extract a readable title from the URL."""
-    # Remove protocol and domain
-    path = url.split('/')[-1]
-    
-    # Handle Arabic URLs
-    if 'ar/' in url or is_arabic:
-        # Replace common Arabic URL patterns
-        path = path.replace('-', ' ').replace('_', ' ').replace('%20', ' ')
-        return path
-    
-    # Handle English URLs
-    title = path.split('.')[0].replace('-', ' ').replace('_', ' ')
-    return title.title()
-
 def ask_bot(question: str, language: str = 'en', provider: str = ''):
     # Build the state graph.
     graph_builder = StateGraph(State)
+    
+    # Add nodes
     graph_builder.add_node("retrieval", retrieval_node)
+    graph_builder.add_node("context_processor", postprocess_node)
     graph_builder.add_node("answer", model_node)
     graph_builder.add_node("tools", ToolNode(TOOLS))
+    
+    # Add edges
     graph_builder.add_edge(START, "retrieval")
-    graph_builder.add_edge("retrieval", "answer")
+    graph_builder.add_edge("retrieval", "context_processor")
+    graph_builder.add_edge("context_processor", "answer")
     graph_builder.add_conditional_edges("answer", route_model_output)
     graph_builder.add_edge("tools", "answer")
+    
     graph = graph_builder.compile()
 
     # Get conversation history
@@ -197,9 +194,9 @@ def ask_bot(question: str, language: str = 'en', provider: str = ''):
 if __name__ == "__main__":
     # result = ask_bot("ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟")
     # result = ask_bot("هل يجوز قراءة القرآن بدون وضوء؟")
-    result = ask_bot("ممكن أسمع موسيقى ؟", "ar")
+    # result = ask_bot("ممكن أسمع موسيقى ؟", "ar")
     # result = ask_bot("can I greet Christians?")
-    # result = ask_bot("can I listen to music?")
+    result = ask_bot("can I listen to music?")
     answer = result["answer"]
     sources = result["sources"]
     print(answer)

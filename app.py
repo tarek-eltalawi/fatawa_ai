@@ -27,7 +27,7 @@ TRANSLATIONS = {
         'history_cleared': "Conversation history cleared"
     },
     'ar': {
-        'placeholder': "...اكتب سؤالك هنا",
+        'placeholder': "اكتب سؤالك هنا...",
         'thinking': "جارٍ التفكير",
         'title': "فتوى",
         'sources_title': "المصادر",

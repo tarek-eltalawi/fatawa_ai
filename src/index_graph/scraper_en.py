@@ -1,8 +1,8 @@
 """English Q&A scraper implementation."""
 
-from base_scraper import BaseQAScraper
-from pinecone_manager import PineconeManager
-from config import PINECONE_INDEX_NAME_EN
+from src.index_graph.base_scraper import BaseQAScraper
+from src.utilities.pinecone_manager import PineconeManager
+from retrieval_graph.config import PINECONE_INDEX_NAME_EN
 from typing import Dict, Optional
 from bs4 import BeautifulSoup, Tag
 

@@ -1,9 +1,9 @@
 """Arabic Q&A scraper implementation."""
 
 from datetime import datetime
-from base_scraper import BaseQAScraper
-from pinecone_manager import PineconeManager
-from config import PINECONE_INDEX_NAME_AR
+from src.index_graph.base_scraper import BaseQAScraper
+from src.utilities.pinecone_manager import PineconeManager
+from retrieval_graph.config import PINECONE_INDEX_NAME_AR
 from typing import Dict, Optional
 from bs4 import BeautifulSoup, Tag
 

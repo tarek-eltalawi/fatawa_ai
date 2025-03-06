@@ -1,8 +1,19 @@
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
-from service import ask_bot, memory
+from langchain_core.messages import HumanMessage
+import os
 
-app = Flask(__name__)
+# Use proper imports that work both when imported and when run directly
+from src.retrieval_graph.service import graph
+from src.utilities.utils import format_sources
+
+# Get the project root directory to find templates and static files
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Initialize Flask with correct paths to templates and static files
+app = Flask(__name__, 
+            template_folder=os.path.join(project_root, 'templates'),
+            static_folder=os.path.join(project_root, 'static'))
 CORS(app)
 
 # Define available sources
@@ -66,14 +77,22 @@ def ask():
                 'error': TRANSLATIONS[lang]['error_no_question']
             }), 400
 
-        # Get response from service
-        response = ask_bot(question, lang, provider)
+        # config = {"configurable": {"thread_id": "1"}}
+        # Run the graph.
+        final_state = graph.invoke({
+            "language": lang,
+            "provider": provider,
+            "messages": [HumanMessage(content=question)]
+        })
+
+        answer = final_state.get('messages')[-1].content
+        sources = final_state.get('sources', [])
         
-        # Add history to response
-        response['history'] = {
-            'messages': memory.to_dict(),
-            'total_messages': len(memory.messages),
-            'has_previous': len(memory.messages) > 0
+        # Return structured response
+        response = {
+            "answer": answer,
+            "sources": format_sources(sources, lang == 'ar'),
+            "language": lang
         }
         
         return jsonify(response)
@@ -88,7 +107,6 @@ def ask():
 def clear_history():
     try:
         lang = request.json.get('language', 'en')
-        memory.clear()
         return jsonify({
             'message': TRANSLATIONS[lang]['history_cleared']
         })

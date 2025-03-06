@@ -1,8 +1,12 @@
-from typing import List, Dict, Any, Optional
+from langchain_core.documents.base import Document
 from langchain_huggingface import HuggingFaceEmbeddings
 from pinecone import Pinecone, ServerlessSpec
-from utils import preprocess_text
-from config import (
+from src.utilities.utils import preprocess_text
+from langchain_pinecone import PineconeVectorStore
+from typing import List, Dict, Any, Optional
+from langchain_core.runnables import RunnableConfig
+import asyncio
+from src.retrieval_graph.config import (
     PINECONE_API_KEY,
     PINECONE_ENVIRONMENT,
     EMBEDDING_MODEL_EN,
@@ -103,6 +107,25 @@ class PineconeManager:
                 ids=vector_ids,
                 namespace=self.namespace
             )
+            return result.get('vectors', {})
+        except Exception as e:
+            print(f"Error batch fetching vectors: {str(e)}")
+            return {}
+
+    async def aretrieve_docs(self, question: str, config: RunnableConfig) -> List[Document]:
+        """Retrieve documents with preprocessed query."""
+        vstore = PineconeVectorStore.from_existing_index(
+            index_name=self.index_name, embedding=self.embeddings, namespace=self.namespace
+        )
+        retriever = vstore.as_retriever(search_kwargs={"k": TOP_K})
+        return await retriever.ainvoke(question, config)
+    
+    async def abatch_fetch_vectors(self, vector_ids: List[str], confing: RunnableConfig) -> Dict[str, Any]:
+        """Fetch multiple vectors in a single request."""
+        index = self.pc.Index(self.index_name)
+        try:
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, index.fetch, vector_ids, self.namespace)
             return result.get('vectors', {})
         except Exception as e:
             print(f"Error batch fetching vectors: {str(e)}")

@@ -10,9 +10,9 @@ from typing import List, Dict, Optional
 from tqdm import tqdm
 from datetime import datetime
 import xml.etree.ElementTree as ET
-from pinecone_manager import PineconeManager
+from src.utilities.pinecone_manager import PineconeManager
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from config import CHUNK_SIZE, CHUNK_OVERLAP
+from retrieval_graph.config import CHUNK_SIZE, CHUNK_OVERLAP
 import json
 import os
 

@@ -1,6 +1,9 @@
 from typing import Optional, List, Dict, Any
 from pyarabic.normalize import normalize_searchtext
 from difflib import SequenceMatcher
+from langchain_core.runnables import RunnableLambda
+from langdetect import detect, LangDetectException
+import re
 
 def normalize_arabic_text(text: str) -> str:
     """
@@ -26,6 +29,13 @@ def preprocess_text(text: str, language: Optional[str] = None) -> str:
     if language == 'ar':
         return normalize_arabic_text(text)
     return text
+
+def sources_in_markdown(sources, is_arabic=False):
+    """Format sources as a list of dictionaries with titles and URLs."""
+    formatted_sources = format_sources(sources, is_arabic)
+    sources_title = "Sources" if not is_arabic else "المصادر"
+    sources_md = "\n".join([f"- [{source['title']}]({source['url']})" for source in formatted_sources])
+    return f"\n\n ##### {sources_title}:\n{sources_md}"
 
 def format_sources(sources, is_arabic=False):
     """Format sources as a list of dictionaries with titles and URLs."""
@@ -73,6 +83,26 @@ def summarize_text(text: str, max_tokens: int) -> str:
     Summarize text to fit within token limit by taking the first and last parts.
     """
     return text
+
+def detect_language(text: str) -> str:
+    """Detect the language of the input text."""
+    try:
+        lang = detect(text)
+        # For Arabic variants, normalize to 'ar'
+        if lang in ['en']:
+            return 'en'
+        return 'ar'
+    except LangDetectException:
+        return 'en'  # Default to English if detection fails
+
+def remove_chain_of_thought(message):
+    # If the message is an AIMessage, extract its content and remove <think> tags
+    if message.content:
+        return re.sub(r"<think>.*?</think>", "", message.content, flags=re.DOTALL).strip()
+    return message
+
+# Wrap the function as a RunnableLambda for integration in the chain
+cleaner = RunnableLambda(remove_chain_of_thought)
 
 def process_context(answers: List[Dict[str, Any]], max_tokens: int = 500) -> List[Dict[str, Any]]:
     """

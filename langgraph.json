@@ -1,0 +1,10 @@
+{
+  "dependencies": ["."],
+  "dockerfile_lines": [
+    "ENV SERVICE_HOST=host.docker.internal"
+  ],
+  "graphs": {
+    "retrieval_graph": "./src/retrieval_graph/service.py:graph"
+  },
+  "env": ".env"
+}

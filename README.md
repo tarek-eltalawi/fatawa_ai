@@ -18,6 +18,7 @@ pip install -r requirements.txt
 ```env
 # Pinecone Configuration
 PINECONE_API_KEY = "your_api_key"
+```
 
 4. LLM setup
 

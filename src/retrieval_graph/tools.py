@@ -1,29 +1,25 @@
 """
 This module provides tools to be used by the RAG agent.
 """
-
-from typing import Any, Callable, List, Optional
 from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import InjectedToolArg
-from typing_extensions import Annotated
-from deep_translator import GoogleTranslator
+from src.retrieval_graph.retrieval import aretrieve_documents
+from src.utilities.utils import sources_in_markdown
+from langchain_core.runnables import RunnableConfig
+from typing import Any, List, Callable
 
-def translate(
-    text: str, 
-    target_lang: str = 'en',
-    config: Annotated[RunnableConfig, InjectedToolArg] = {}
-) -> Optional[dict[str, Any]]:
+async def retrieve(query: str, language: str, config: RunnableConfig):
     """
-    NOT USED FOR NOW
-    Translates text to the specified target language.
+    Fetches Islamic related documents from a vectorDB.
+    Should be used for questions on Islamic jurisprudence, fiqh, Islamic law, any permissibility questions, and any questions related to the Quran and Sunnah.
+    Args:
+        query: The user's question.
+        language: The language of the user's question.
+        config: The configuration for this runnable.
     """
-    try:
-        translator = GoogleTranslator(source='auto', target=target_lang)
-        translated_text = translator.translate(text)
-    except Exception as err:
-        # Fallback: if translation fails, return the original text with a note.
-        translated_text = f"(Translation error: {err}) {text}"
-    
-    return {"translated_text": translated_text}
+    result = await aretrieve_documents(query, config, language)
+    return {
+        "context": result["context"],
+        "sources": sources_in_markdown(result["sources"], language == "ar")
+    }
 
-TOOLS: List[Callable[..., Any]] = []
+TOOLS: List[Callable[..., Any]] = [retrieve]

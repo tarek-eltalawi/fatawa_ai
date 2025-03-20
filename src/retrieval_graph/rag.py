@@ -39,7 +39,7 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
 
     # It's the first user question. We will use the input directly to search.
     query = messages[-1].content
-    language = state.language or detect_language(str(query))
+    language = detect_language(str(query))
     if len(messages) > 1:
         prompt = ChatPromptTemplate.from_messages(
             [

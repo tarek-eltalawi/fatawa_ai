@@ -17,6 +17,8 @@ from typing import Any
 from pydantic import BaseModel
 from typing import cast
 
+from src.retrieval_graph.tools import TOOLS
+
 class SearchQuery(BaseModel):
     """Search the indexed documents for a query."""
 
@@ -80,8 +82,23 @@ async def acall_reasoner(messages: Any, config: RunnableConfig):
     Returns:
         the generated response
     """
-    llm = reasoner_llm if LOCAL_REASONER_MODEL is "" else local_llm
+    llm = reasoner_llm if LOCAL_REASONER_MODEL == "" else local_llm
     return await llm.ainvoke(messages, config)
+
+async def acall_model_with_tools(messages: Any, config: RunnableConfig):
+    """
+    Call the reasoner LLM with a list of messages.
+
+    Args:
+        messages: A list of messages to send to the LLM
+        config: The RunnableConfig
+
+    Returns:
+        the generated response
+    """
+    llm = interactive_llm if LOCAL_INTERACTIVE_MODEL == "" else local_llm
+    bound_llm = llm.bind_tools(TOOLS)
+    return await bound_llm.ainvoke(messages, config)
 
 
 ###

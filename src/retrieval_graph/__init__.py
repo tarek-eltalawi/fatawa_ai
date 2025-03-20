@@ -24,6 +24,6 @@ For detailed configuration options and usage instructions, refer to the Configur
 and individual component documentation within the retrieval_graph package.
 """  # noqa
 
-from src.retrieval_graph.service import graph
+from src.retrieval_graph.rag import graph
 
 __all__ = ["graph"]

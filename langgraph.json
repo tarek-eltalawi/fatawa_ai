@@ -4,7 +4,8 @@
     "ENV SERVICE_HOST=host.docker.internal"
   ],
   "graphs": {
-    "retrieval_graph": "./src/retrieval_graph/service.py:graph"
+    "retrieval_graph": "./src/retrieval_graph/rag.py:graph",
+    "rag_with_tools": "./src/retrieval_graph/rag_with_tools.py:graph"
   },
   "env": ".env"
 }

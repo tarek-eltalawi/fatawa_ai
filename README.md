@@ -31,16 +31,16 @@ brew install ollama
 ollama serve
 ```
 
-2. Choose a model and run it with Ollama locally e.g for qwen2.5:14b model:
+2. Choose a model and run it with Ollama locally e.g for qwq model:
 
 ```bash
-ollama run qwen2.5:14b
+ollama run qwq
 ```
 
 Add these to your `.env` file:
 ```
-LOCAL_REASONER_MODEL="qwen2.5:14b"
-LOCAL_INTERACTIVE_MODEL="qwen2.5:14b"
+LOCAL_REASONER_MODEL="qwq"
+LOCAL_TOOL_CALLING_MODEL="qwq"  # this model has to support tool calling otherwise it won't work
 ```
 
 ### Using OpenRouter
@@ -52,8 +52,8 @@ Make sure the local env variables are not set.
 `.env` should look like this
 ```
 OPENROUTER_API_KEY="your_api_key"
-LOCAL_REASONER_MODEL=""
-LOCAL_INTERACTIVE_MODEL=""
+REASONER_MODEL=<your_reasoner_model>  # e.g "google/gemma-3-27b-it:free"
+TOOL_CALLING_MODEL=<your_tool_calling_model>  # e.g "openai/gpt-4o-mini" this model also has to support tool calling
 ```
 
 ## Usage

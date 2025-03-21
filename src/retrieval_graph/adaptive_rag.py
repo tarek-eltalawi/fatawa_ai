@@ -9,10 +9,10 @@ relevant documents, and formulating responses.
 from typing import List, TypedDict
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
-from src.retrieval_graph.prompts import QUESTION_ROUTER_PROMPT_AR, QUESTION_ROUTER_PROMPT_EN
+from src.retrieval_graph.prompts import QUESTION_ROUTER_PROMPT
 from src.retrieval_graph.retrieval import retrieve_documents
 from src.utilities.utils import sources_in_markdown
-from retrieval_graph.models import (acall_interactive, retrieval_grader,hallucination_grader, answer_grader, 
+from retrieval_graph.models import (acall_reasoner, retrieval_grader,hallucination_grader, answer_grader, 
     question_rewriter, rag_chain, local_llm)
 
 # Define the function that calls the model
@@ -154,10 +154,10 @@ async def route_question(state) -> str:
         str: Next node to call
     """
 
-    template = QUESTION_ROUTER_PROMPT_AR if state.language == "ar" else QUESTION_ROUTER_PROMPT_EN
+    template = QUESTION_ROUTER_PROMPT
     question_router_prompt = PromptTemplate(template=template, input_variables=["question"])
     prompt = question_router_prompt.format(question=state.queries[-1])
-    source = await acall_interactive(prompt)
+    source = await acall_reasoner(prompt)
     if source.content == "vectorstore":
         return "retrieve"
     else:

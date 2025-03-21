@@ -1,9 +1,8 @@
 from typing import Any, Dict
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
-from src.retrieval_graph.prompts import (QUERY_SYSTEM_PROMPT_AR, QUERY_SYSTEM_PROMPT_EN, QUESTION_ROUTER_PROMPT_AR, QUESTION_ROUTER_PROMPT_EN, RESPONDER_PROMPT_AR, RESPONSE_SYSTEM_PROMPT_EN, 
-    RESPONSE_SYSTEM_PROMPT_AR, RESPONDER_PROMPT_EN, SUMMARIZE_PROMPT_AR, SUMMARIZE_PROMPT_EN)
-from src.retrieval_graph.models import (acall_generate_query, acall_interactive, acall_reasoner)
+from src.retrieval_graph.prompts import (QUERY_SYSTEM_PROMPT, QUESTION_ROUTER_PROMPT, RESPONDER_PROMPT, RESPONSE_SYSTEM_PROMPT, SUMMARIZE_PROMPT)
+from src.retrieval_graph.models import (acall_generate_query, acall_reasoner)
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, RemoveMessage
 from src.retrieval_graph.retrieval import aretrieve_documents
 from src.retrieval_graph.state import State
@@ -39,11 +38,10 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
 
     # It's the first user question. We will use the input directly to search.
     query = messages[-1].content
-    language = detect_language(str(query))
     if len(messages) > 1:
         prompt = ChatPromptTemplate.from_messages(
             [
-                ("system", QUERY_SYSTEM_PROMPT_AR if language == "ar" else QUERY_SYSTEM_PROMPT_EN),
+                ("system", QUERY_SYSTEM_PROMPT),
                 ("placeholder", "{messages}"),
             ]
         )
@@ -60,8 +58,7 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
         query = await acall_generate_query(message_value, config)
     
     return {
-        "queries": [query],
-        "language": language
+        "queries": [query]
     }
 
 async def retrieval_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -75,11 +72,12 @@ async def retrieval_node(state: State, *, config: RunnableConfig) -> Dict[str, A
         Dict containing context and sources to update the state
     """
     question = state.queries[-1]
-    result = await aretrieve_documents(question, config, state.language)
+    language = detect_language(str(question))
+    result = await aretrieve_documents(question, config, language in ["ar", "arabic"])
     
     return {
         "context": result["context"],
-        "sources": sources_in_markdown(result["sources"], state.language == "ar")
+        "sources": sources_in_markdown(result["sources"], language in ["ar", "arabic"])
     }
 
 async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -100,7 +98,7 @@ async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", RESPONSE_SYSTEM_PROMPT_AR if state.language == "ar" else RESPONSE_SYSTEM_PROMPT_EN),
+            ("system", RESPONSE_SYSTEM_PROMPT),
             ("placeholder", "{messages}"),
         ]
     )
@@ -121,7 +119,7 @@ async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
 async def respond_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     """Respond to the user's question."""
     question = state.queries[-1]
-    system_prompt = RESPONDER_PROMPT_AR if state.language == "ar" else RESPONDER_PROMPT_EN
+    system_prompt = RESPONDER_PROMPT
     response = await acall_reasoner([SystemMessage(content=system_prompt), HumanMessage(content=question)], config)
     return {
         "messages": [AIMessage(id=response.id, content=response.content)]
@@ -129,10 +127,10 @@ async def respond_node(state: State, *, config: RunnableConfig) -> Dict[str, Any
 
 async def summarize_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     """Summarize the conversation."""
-    template = SUMMARIZE_PROMPT_AR if state.language == "ar" else SUMMARIZE_PROMPT_EN
+    template = SUMMARIZE_PROMPT
     summarize_prompt = PromptTemplate(template=template, input_variables=["summary", "messages"])
     prompt = summarize_prompt.format(messages=state.messages, summary=state.summary)
-    summary = await acall_interactive(prompt, config)
+    summary = await acall_reasoner(prompt, config)
     # Delete all but the 2 most recent messages
     delete_messages = [RemoveMessage(id=m.id) for m in state.messages[:-2] if m.id is not None]
 
@@ -151,10 +149,10 @@ async def route_question(state: State) -> str:
     Returns:
         str: Next node to call
     """
-    template = QUESTION_ROUTER_PROMPT_AR if state.language == "ar" else QUESTION_ROUTER_PROMPT_EN
+    template = QUESTION_ROUTER_PROMPT
     question_router_prompt = PromptTemplate(template=template, input_variables=["question"])
     prompt = question_router_prompt.format(question=state.queries[-1])
-    source = await acall_interactive(prompt)
+    source = await acall_reasoner(prompt)
     if "vectorstore" not in source.content:
         return "respond"
     else:

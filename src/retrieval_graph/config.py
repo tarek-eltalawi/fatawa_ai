@@ -17,17 +17,13 @@ OPENROUTER_API_BASE = "https://openrouter.ai/api/v1"
 # Ollama Configuration
 SERVICE_HOST = os.getenv("SERVICE_HOST", "localhost")
 OLLAMA_BASE_URL = f"http://{SERVICE_HOST}:11434"
-QWEN_MODEL = "qwen2.5:3b"
-JAIS_MODEL = "jwnder/jais-adaptive:7b"
-DEEPSEEK_MODEL = "deepseek-r1:14b"
 QWQ_MODEL = "qwq"
-OPENROUTER_QWQ_MODEL = "qwen/qwq-32b:free"
 
-REASONER_MODEL = "google/gemma-3-27b-it:free"
-INTERACTIVE_MODEL = "google/gemini-2.0-pro-exp-02-05:free"
+REASONER_MODEL = os.getenv("REASONER_MODEL", "google/gemma-3-27b-it:free")
+TOOL_CALLING_MODEL = os.getenv("TOOL_CALLING_MODEL", "google/gemini-2.0-pro-exp-02-05:free")
 
 LOCAL_REASONER_MODEL = os.getenv("LOCAL_REASONER_MODEL", "")
-LOCAL_INTERACTIVE_MODEL = os.getenv("LOCAL_INTERACTIVE_MODEL", "")
+LOCAL_TOOL_CALLING_MODEL = os.getenv("LOCAL_TOOL_CALLING_MODEL", "")
 
 TEMPERATURE = 0.1
 

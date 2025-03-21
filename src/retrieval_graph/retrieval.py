@@ -3,18 +3,18 @@ from src.retrieval_graph.config import MAX_CUNKS, PINECONE_INDEX_NAME_AR, PINECO
 from src.utilities.pinecone_manager import PineconeManager
 from langchain_core.runnables import RunnableConfig
 
-def retrieve_documents(question: str, language: str = 'en') -> Dict[str, Any]:
+def retrieve_documents(question: str, is_arabic: bool) -> Dict[str, Any]:
     """
     Retrieve relevant documents from Pinecone based on a question.
     
     Args:
         question: The user's question
-        language: The language code ('en' or 'ar')
+        is_arabic: A boolean indicating if the user's question is in Arabic.
         
     Returns:
         Dict containing raw_answers, context, and sources
     """
-    index_name = PINECONE_INDEX_NAME_AR if language == 'ar' else PINECONE_INDEX_NAME_EN
+    index_name = PINECONE_INDEX_NAME_AR if is_arabic else PINECONE_INDEX_NAME_EN
     pinecone_manager = PineconeManager(index_name=index_name)
     
     # Get initial matches - now getting top 10 chunks
@@ -40,18 +40,19 @@ def retrieve_documents(question: str, language: str = 'en') -> Dict[str, Any]:
         "sources": list(dict.fromkeys(answer['source'] for answer in complete_answers))
     }
 
-async def aretrieve_documents(question: str, config: RunnableConfig, language: str) -> Dict[str, Any]:
+async def aretrieve_documents(question: str, config: RunnableConfig, is_arabic: bool) -> Dict[str, Any]:
     """
     Retrieve relevant documents from Pinecone based on a question.
 
     Args:
         question: The user's question
-        language: The language code ('en' or 'ar')
+        is_arabic: A boolean indicating if the user's question is in Arabic.
+        config: The configuration for this runnable.
 
     Returns:
         Dict containing raw_answers, context, and sources
     """
-    index_name = PINECONE_INDEX_NAME_AR if language == 'ar' else PINECONE_INDEX_NAME_EN
+    index_name = PINECONE_INDEX_NAME_AR if is_arabic else PINECONE_INDEX_NAME_EN
     pinecone_manager = PineconeManager(index_name=index_name)
     retrieved_chunks = await pinecone_manager.aretrieve_docs(question, config)
     doc_ids_to_fetch = extract_doc_ids(retrieved_chunks)

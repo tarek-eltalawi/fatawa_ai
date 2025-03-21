@@ -3,12 +3,9 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
-from src.retrieval_graph.config import (INTERACTIVE_MODEL, LOCAL_INTERACTIVE_MODEL, LOCAL_REASONER_MODEL, OLLAMA_BASE_URL, 
+from src.retrieval_graph.config import (TOOL_CALLING_MODEL, LOCAL_TOOL_CALLING_MODEL, LOCAL_REASONER_MODEL, OLLAMA_BASE_URL, 
     REASONER_MODEL, TEMPERATURE, QWQ_MODEL, OPENROUTER_API_KEY, OPENROUTER_API_BASE, OPENROUTER_QWQ_MODEL)
-from src.retrieval_graph.prompts import (
-    RESPONSE_SYSTEM_PROMPT_EN,
-    RESPONSE_SYSTEM_PROMPT_AR
-)
+from src.retrieval_graph.prompts import RESPONSE_SYSTEM_PROMPT
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
@@ -16,6 +13,7 @@ from langchain_core.runnables import RunnableConfig
 from typing import Any
 from pydantic import BaseModel
 from typing import cast
+import asyncio
 
 from src.retrieval_graph.tools import TOOLS
 
@@ -25,9 +23,11 @@ class SearchQuery(BaseModel):
     query: str
 
 # LLMs
-interactive_llm = ChatOpenAI(
+
+tool_calling_llm = ChatOpenAI(
     temperature=TEMPERATURE,
-    model=INTERACTIVE_MODEL,
+    # model=TOOL_CALLING_MODEL,
+    model="google/gemini-2.0-flash-lite-preview-02-05:free",
     api_key=SecretStr(str(OPENROUTER_API_KEY)),
     base_url=OPENROUTER_API_BASE
 )
@@ -39,9 +39,7 @@ reasoner_llm = ChatOpenAI(
     base_url=OPENROUTER_API_BASE
 )
 
-local_llm = ChatOllama(model=QWQ_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-
-async def acall_generate_query(message: Any, config: RunnableConfig):
+async def acall_generate_query(message: Any, config: RunnableConfig = None):
     """
     Generate a query from a question.
 
@@ -52,12 +50,12 @@ async def acall_generate_query(message: Any, config: RunnableConfig):
     Returns:
         the generated query
     """
-    llm = interactive_llm if LOCAL_INTERACTIVE_MODEL is "" else local_llm
+    llm = tool_calling_llm if LOCAL_TOOL_CALLING_MODEL == "" else ChatOllama(model=LOCAL_TOOL_CALLING_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     model = llm.with_structured_output(SearchQuery)
     generated = cast(SearchQuery, await model.ainvoke(message, config))
     return generated.query
 
-async def acall_interactive(messages: Any, config: RunnableConfig = RunnableConfig()):
+async def acall_reasoner(messages: Any, config: RunnableConfig = None):
     """
     Call the reasoner LLM with a list of messages.
 
@@ -68,10 +66,10 @@ async def acall_interactive(messages: Any, config: RunnableConfig = RunnableConf
     Returns:
         the generated response
     """
-    llm = interactive_llm if LOCAL_INTERACTIVE_MODEL is "" else local_llm
+    llm = reasoner_llm if LOCAL_REASONER_MODEL == "" else ChatOllama(model=LOCAL_REASONER_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     return await llm.ainvoke(messages, config)
 
-async def acall_reasoner(messages: Any, config: RunnableConfig):
+async def acall_model_with_tools(messages: Any, config: RunnableConfig = None):
     """
     Call the reasoner LLM with a list of messages.
 
@@ -82,21 +80,8 @@ async def acall_reasoner(messages: Any, config: RunnableConfig):
     Returns:
         the generated response
     """
-    llm = reasoner_llm if LOCAL_REASONER_MODEL == "" else local_llm
-    return await llm.ainvoke(messages, config)
-
-async def acall_model_with_tools(messages: Any, config: RunnableConfig):
-    """
-    Call the reasoner LLM with a list of messages.
-
-    Args:
-        messages: A list of messages to send to the LLM
-        config: The RunnableConfig
-
-    Returns:
-        the generated response
-    """
-    llm = interactive_llm if LOCAL_INTERACTIVE_MODEL == "" else local_llm
+    
+    llm = tool_calling_llm if LOCAL_TOOL_CALLING_MODEL == "" else ChatOllama(model=LOCAL_TOOL_CALLING_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     bound_llm = llm.bind_tools(TOOLS)
     return await bound_llm.ainvoke(messages, config)
 
@@ -105,6 +90,8 @@ async def acall_model_with_tools(messages: Any, config: RunnableConfig):
 # Below methods are not used, but will be in the future
 ###
 
+local_llm = ChatOllama(model=QWQ_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
+
 def call_openrouter(state, messages):
     client = OpenAI(
     base_url=OPENROUTER_API_BASE,
@@ -112,7 +99,7 @@ def call_openrouter(state, messages):
     )
     openai_messages = []
     # Add system message
-    system_content = RESPONSE_SYSTEM_PROMPT_AR if state.language == "ar" else RESPONSE_SYSTEM_PROMPT_EN
+    system_content = RESPONSE_SYSTEM_PROMPT
     system_content = system_content.format(context=state.context, messages=messages)
     openai_messages.append({"role": "system", "content": system_content})
     

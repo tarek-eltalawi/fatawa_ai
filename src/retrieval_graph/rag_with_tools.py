@@ -2,13 +2,11 @@ from typing import Any, Dict, Literal
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
-from src.retrieval_graph.prompts import (QUERY_SYSTEM_PROMPT_AR, QUERY_SYSTEM_PROMPT_EN, RESPONSE_SYSTEM_PROMPT_RETRIEVE_EN,
-    SUMMARIZE_PROMPT_AR, SUMMARIZE_PROMPT_EN)
-from src.retrieval_graph.models import (acall_generate_query, acall_interactive, acall_model_with_tools, acall_reasoner)
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage, ToolMessage
+from src.retrieval_graph.prompts import (QUERY_SYSTEM_PROMPT, RESPONSE_SYSTEM_PROMPT_WITH_TOOLS, SUMMARIZE_PROMPT)
+from src.retrieval_graph.models import (acall_generate_query, acall_model_with_tools, acall_reasoner)
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage
 from src.retrieval_graph.state import State
 from src.retrieval_graph.tools import TOOLS
-from src.utilities.utils import detect_language
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
@@ -40,29 +38,18 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
 
     # It's the first user question. We will use the input directly to search.
     query = messages[-1].content
-    language = detect_language(str(query))
     if len(messages) > 1:
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", QUERY_SYSTEM_PROMPT_AR if language == "ar" else QUERY_SYSTEM_PROMPT_EN),
-                ("placeholder", "{messages}"),
-            ]
-        )
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", QUERY_SYSTEM_PROMPT),
+            ("placeholder", "{messages}")])
 
-        message_value = await prompt.ainvoke(
-            {
-                "messages": messages,
-                "queries": "\n- ".join(state.queries)
-            },
-            config
-        )
+        message_value = await prompt.ainvoke({"messages": messages, "queries": "\n- ".join(state.queries)},config)
 
         # Generate a query from the user's messages
         query = await acall_generate_query(message_value, config)
     
     return {
-        "queries": [query],
-        "language": language
+        "queries": [query]
     }
 
 async def answer(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -84,13 +71,12 @@ async def answer(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
         messages = [SystemMessage(content=state.summary), *state.messages]
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", RESPONSE_SYSTEM_PROMPT_RETRIEVE_EN),
+        ("system", RESPONSE_SYSTEM_PROMPT_WITH_TOOLS),
         ("placeholder", "{messages}")])
 
     message_value = await prompt.ainvoke({"messages": messages}, config)
-
-    response = AIMessage(content="")
-    if last_message and isinstance(last_message, ToolMessage) and last_message.name == "retrieve":
+    # TODO: implement a step to prevent loops
+    if last_message and last_message.type == "tool" and last_message.name == "retrieve":
         response = await acall_reasoner(message_value, config)
     else:
         response = await acall_model_with_tools(message_value, config)
@@ -104,10 +90,10 @@ async def summarize(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
         msg for msg in state.messages 
         if isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)
     ]
-    template = SUMMARIZE_PROMPT_AR if state.language == "ar" else SUMMARIZE_PROMPT_EN
+    template = SUMMARIZE_PROMPT
     summarize_prompt = PromptTemplate(template=template, input_variables=["summary", "messages"])
     prompt = summarize_prompt.format(messages=filtered_messages, summary=state.summary)
-    summary = await acall_interactive(prompt, config)
+    summary = await acall_reasoner(prompt, config)
     # Delete all but the 2 most recent messages
     # Get the IDs of the last human and AI messages from filtered_messages
     keep_ids = set()

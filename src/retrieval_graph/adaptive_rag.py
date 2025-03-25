@@ -9,11 +9,11 @@ relevant documents, and formulating responses.
 from typing import List, TypedDict
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
-from src.retrieval_graph.prompts import QUESTION_ROUTER_PROMPT
-from src.retrieval_graph.retrieval import retrieve_documents
+from src.utilities.prompts import QUESTION_ROUTER_PROMPT
+from src.utilities.retrieval import retrieve_documents
 from src.utilities.utils import sources_in_markdown
 from retrieval_graph.models import (acall_reasoner, retrieval_grader,hallucination_grader, answer_grader, 
-    question_rewriter, rag_chain, local_llm)
+    question_rewriter, local_llm)
 
 # Define the function that calls the model
 class GraphState(TypedDict):

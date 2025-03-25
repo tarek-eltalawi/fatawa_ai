@@ -2,9 +2,8 @@
 This module provides tools to be used by the RAG agent.
 """
 from langchain_core.runnables import RunnableConfig
-from src.retrieval_graph.retrieval import aretrieve_documents
+from src.utilities.retrieval import aretrieve_documents
 from src.utilities.utils import sources_in_markdown
-from langchain_core.runnables import RunnableConfig
 from typing import Any, List, Callable
 
 async def retrieve(query: str, is_arabic: bool, config: RunnableConfig):

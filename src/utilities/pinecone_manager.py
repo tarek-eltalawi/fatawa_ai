@@ -6,7 +6,7 @@ from langchain_pinecone import PineconeVectorStore
 from typing import List, Dict, Any, Optional
 from langchain_core.runnables import RunnableConfig
 import asyncio
-from src.retrieval_graph.config import (
+from src.utilities.config import (
     PINECONE_API_KEY,
     PINECONE_ENVIRONMENT,
     EMBEDDING_MODEL_EN,

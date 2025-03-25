@@ -2,14 +2,14 @@ from typing import Any, Dict, Literal
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
-from src.retrieval_graph.prompts import (QUERY_SYSTEM_PROMPT, RESPONSE_SYSTEM_PROMPT_WITH_TOOLS, SUMMARIZE_PROMPT)
-from src.retrieval_graph.models import (acall_generate_query, acall_model_with_tools, acall_reasoner)
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage
-from src.retrieval_graph.state import State
-from src.retrieval_graph.tools import TOOLS
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage
+from src.retrieval_graph_with_tools.models import (acall_generate_query, acall_model_with_tools, acall_reasoner)
+from src.retrieval_graph_with_tools.tools import TOOLS
+from src.utilities.state import State
+from src.utilities.prompts import (QUERY_SYSTEM_PROMPT, RESPONSE_SYSTEM_PROMPT_WITH_TOOLS, SUMMARIZE_PROMPT)
 
 async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     """Generate a search query based on the current state and configuration.

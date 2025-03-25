@@ -25,3 +25,4 @@ class State:
     language: str = field(default_factory=str)
     provider: str = field(default_factory=str)
     summary: str = field(default_factory=str)
+    is_arabic: bool = field(default_factory=bool)

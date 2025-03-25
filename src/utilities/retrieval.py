@@ -1,5 +1,5 @@
 from typing import Dict, Any, List, Set
-from src.retrieval_graph.config import MAX_CUNKS, PINECONE_INDEX_NAME_AR, PINECONE_INDEX_NAME_EN
+from src.utilities.config import MAX_CUNKS, PINECONE_INDEX_NAME_AR, PINECONE_INDEX_NAME_EN
 from src.utilities.pinecone_manager import PineconeManager
 from langchain_core.runnables import RunnableConfig
 

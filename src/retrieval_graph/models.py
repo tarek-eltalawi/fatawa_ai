@@ -3,19 +3,14 @@ from langchain_ollama import ChatOllama
 from langchain_core.output_parsers import JsonOutputParser
 from langchain import hub
 from langchain_core.output_parsers import StrOutputParser
-from src.retrieval_graph.config import (TOOL_CALLING_MODEL, LOCAL_TOOL_CALLING_MODEL, LOCAL_REASONER_MODEL, OLLAMA_BASE_URL, 
-    REASONER_MODEL, TEMPERATURE, QWQ_MODEL, OPENROUTER_API_KEY, OPENROUTER_API_BASE, OPENROUTER_QWQ_MODEL)
-from src.retrieval_graph.prompts import RESPONSE_SYSTEM_PROMPT
-from openai import OpenAI
 from langchain_openai import ChatOpenAI
-from pydantic import SecretStr
 from langchain_core.runnables import RunnableConfig
-from typing import Any
-from pydantic import BaseModel
-from typing import cast
-import asyncio
-
-from src.retrieval_graph.tools import TOOLS
+from openai import OpenAI
+from pydantic import SecretStr, BaseModel
+from typing import Any, cast
+from src.utilities.config import (TOOL_CALLING_MODEL, LOCAL_TOOL_CALLING_MODEL, LOCAL_REASONER_MODEL, OLLAMA_BASE_URL, 
+    REASONER_MODEL, TEMPERATURE, QWQ_MODEL, OPENROUTER_API_KEY, OPENROUTER_API_BASE)
+from src.utilities.prompts import RESPONSE_SYSTEM_PROMPT
 
 class SearchQuery(BaseModel):
     """Search the indexed documents for a query."""
@@ -38,6 +33,8 @@ reasoner_llm = ChatOpenAI(
     api_key=SecretStr(str(OPENROUTER_API_KEY)),
     base_url=OPENROUTER_API_BASE
 )
+
+local_llm = ChatOllama(model=QWQ_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
 
 async def acall_generate_query(message: Any, config: RunnableConfig = None):
     """
@@ -69,28 +66,10 @@ async def acall_reasoner(messages: Any, config: RunnableConfig = None):
     llm = reasoner_llm if LOCAL_REASONER_MODEL == "" else ChatOllama(model=LOCAL_REASONER_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
     return await llm.ainvoke(messages, config)
 
-async def acall_model_with_tools(messages: Any, config: RunnableConfig = None):
-    """
-    Call the reasoner LLM with a list of messages.
-
-    Args:
-        messages: A list of messages to send to the LLM
-        config: The RunnableConfig
-
-    Returns:
-        the generated response
-    """
-    
-    llm = tool_calling_llm if LOCAL_TOOL_CALLING_MODEL == "" else ChatOllama(model=LOCAL_TOOL_CALLING_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-    bound_llm = llm.bind_tools(TOOLS)
-    return await bound_llm.ainvoke(messages, config)
-
 
 ###
 # Below methods are not used, but will be in the future
 ###
-
-local_llm = ChatOllama(model=QWQ_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
 
 def call_openrouter(state, messages):
     client = OpenAI(
@@ -120,6 +99,47 @@ def call_openrouter(state, messages):
 #########
 # LLMs
 llm_json_format = ChatOllama(model=QWQ_MODEL, format="json", temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
+
+### Language detector
+
+language_detector_prompt = PromptTemplate(
+    template="""
+    Detect the language of the question and return its universal code.
+    e.g: for Arabic return 'ar' for English return `en`
+
+    question: {question}
+    """,
+    input_variables=["question"],
+)
+
+language_detector = language_detector_prompt | reasoner_llm
+
+### Query Generator
+
+query_generator_prompt = PromptTemplate(
+    template="""
+    You are a query generator that generates a new query based on the user's question.
+    The user asked this question: {question}
+    
+    1. Identify if the question is a follow up question to past queries or not.
+    2. If it is a follow up question, use the previous queries to generate a new query.
+    3. If there are no previous queries, then return the current question as is.
+    4. Return one string object that contains the next query only. Don't add any explanation or thought process, just the generated query itself.
+    5. If the user's question is in Arabic, return the query in Arabic. If the user's question is in English, return the query in English.
+
+    Conversation history:
+    <messages/>
+    {messages}
+    </messages>
+    
+    Previously, the user asked the following queries:
+    <previous_queries/>
+    {queries}
+    </previous_queries>""",
+    input_variables=["queries", "question", "messages"],
+)
+
+query_generator = query_generator_prompt | reasoner_llm
 
 ### Retrieval Grader
 

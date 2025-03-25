@@ -1,15 +1,16 @@
 from typing import Any, Dict
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
-from src.retrieval_graph.prompts import (QUERY_SYSTEM_PROMPT, QUESTION_ROUTER_PROMPT, RESPONDER_PROMPT, RESPONSE_SYSTEM_PROMPT, SUMMARIZE_PROMPT)
-from src.retrieval_graph.models import (acall_generate_query, acall_reasoner)
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, RemoveMessage
-from src.retrieval_graph.retrieval import aretrieve_documents
-from src.retrieval_graph.state import State
-from src.utilities.utils import detect_language, sources_in_markdown
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
+from src.retrieval_graph.models import (language_detector, acall_reasoner, query_generator)
+from src.utilities.retrieval import aretrieve_documents
+from src.utilities.state import State
+from src.utilities.utils import sources_in_markdown
+from src.utilities.prompts import (QUESTION_ROUTER_PROMPT, RESPONDER_PROMPT, 
+    RESPONSE_SYSTEM_PROMPT, SUMMARIZE_PROMPT)
 
 async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     """Generate a search query based on the current state and configuration.
@@ -32,33 +33,18 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
     """
     
     messages = state.messages
+    question = messages[-1].content
     # If there is summary, then we add it
     if state.summary:    
         messages = [SystemMessage(content=state.summary), *state.messages]
 
-    # It's the first user question. We will use the input directly to search.
-    query = messages[-1].content
-    if len(messages) > 1:
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                ("system", QUERY_SYSTEM_PROMPT),
-                ("placeholder", "{messages}"),
-            ]
-        )
-
-        message_value = await prompt.ainvoke(
-            {
-                "messages": messages,
-                "queries": "\n- ".join(state.queries)
-            },
-            config
-        )
-
-        # Generate a query from the user's messages
-        query = await acall_generate_query(message_value, config)
+    response = await query_generator.ainvoke({
+        "queries": "\n- ".join(state.queries),
+        "question": question,
+        "messages": messages}, config)
     
     return {
-        "queries": [query]
+        "queries": [response.content]
     }
 
 async def retrieval_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -72,12 +58,12 @@ async def retrieval_node(state: State, *, config: RunnableConfig) -> Dict[str, A
         Dict containing context and sources to update the state
     """
     question = state.queries[-1]
-    language = detect_language(str(question))
-    result = await aretrieve_documents(question, config, language in ["ar", "arabic"])
+    language = await language_detector.ainvoke({"question": question}, config)
+    result = await aretrieve_documents(question, config, 'ar' in language.content)
     
     return {
         "context": result["context"],
-        "sources": sources_in_markdown(result["sources"], language in ["ar", "arabic"])
+        "sources": sources_in_markdown(result["sources"], 'ar' in language.content)
     }
 
 async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -96,20 +82,14 @@ async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     if state.summary:    
         messages = [SystemMessage(content=state.summary), *state.messages]
     
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", RESPONSE_SYSTEM_PROMPT),
-            ("placeholder", "{messages}"),
-        ]
-    )
-    message_value = await prompt.ainvoke(
-        {
-            "messages": messages,
-            "context": state.context,
-            "sources": state.sources,
-        },
-        config,
-    )
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", RESPONSE_SYSTEM_PROMPT),
+        ("placeholder", "{messages}")])
+
+    message_value = await prompt.ainvoke({
+        "messages": messages,
+        "context": state.context,
+        "sources": state.sources}, config)
 
     response = await acall_reasoner(message_value, config)
     return {

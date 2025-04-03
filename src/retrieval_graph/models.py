@@ -112,7 +112,7 @@ language_detector_prompt = PromptTemplate(
     input_variables=["question"],
 )
 
-language_detector = language_detector_prompt | reasoner_llm
+language_detector = language_detector_prompt | reasoner_llm.with_config({ "tags": ["langsmith:nostream"] })
 
 ### Query Generator
 
@@ -139,7 +139,7 @@ query_generator_prompt = PromptTemplate(
     input_variables=["queries", "question", "messages"],
 )
 
-query_generator = query_generator_prompt | reasoner_llm
+query_generator = query_generator_prompt | reasoner_llm.with_config({ "tags": ["langsmith:nostream"] })
 
 ### Retrieval Grader
 

@@ -2,7 +2,7 @@ import uuid
 from langchain_core.runnables import RunnableConfig
 from langchain_core.messages import HumanMessage
 from src.retrieval_graph import graph
-from src.retrieval_graph.state import State
+from src.utilities.state import State
 import asyncio
 
 async def ask_bot(question: str, lang: str = "en", config: RunnableConfig | None = RunnableConfig()) -> None:

@@ -31,17 +31,11 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
         - For subsequent messages, it uses a language model to generate a refined query.
         - The function uses the configuration to set up the prompt and model for query generation.
     """
-    
-    messages = state.messages
-    question = messages[-1].content
-    # If there is summary, then we add it
-    if state.summary:    
-        messages = [SystemMessage(content=state.summary), *state.messages]
-
+    question = state.messages[-1].content
     response = await query_generator.ainvoke({
         "queries": "\n- ".join(state.queries),
         "question": question,
-        "messages": messages}, config)
+        "messages": state.messages}, config)
     
     return {
         "queries": [response.content]
@@ -59,11 +53,11 @@ async def retrieval_node(state: State, *, config: RunnableConfig) -> Dict[str, A
     """
     question = state.queries[-1]
     language = await language_detector.ainvoke({"question": question}, config)
-    result = await aretrieve_documents(question, config, 'ar' in language.content)
+    result = await aretrieve_documents(question, config, 'ar' in language.content.strip())
     
     return {
         "context": result["context"],
-        "sources": sources_in_markdown(result["sources"], 'ar' in language.content)
+        "sources": sources_in_markdown(result["sources"], 'ar' in language.content.strip())
     }
 
 async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -76,18 +70,12 @@ async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     Returns:
         Dict containing the generated response
     """
-
-    messages = state.messages
-    # If there is summary, then we add it
-    if state.summary:    
-        messages = [SystemMessage(content=state.summary), *state.messages]
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", RESPONSE_SYSTEM_PROMPT),
         ("placeholder", "{messages}")])
 
     message_value = await prompt.ainvoke({
-        "messages": messages,
+        "messages": state.messages,
         "context": state.context,
         "sources": state.sources}, config)
 
@@ -107,16 +95,29 @@ async def respond_node(state: State, *, config: RunnableConfig) -> Dict[str, Any
 
 async def summarize_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     """Summarize the conversation."""
+    summary_messages = [m for m in state.messages if getattr(m, 'name', None) == "summary"]
+    existing_summary = summary_messages[0].content if summary_messages else ""
+    filtered_messages = [
+        msg for msg in state.messages 
+        if (isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)) and msg.content is not ""
+    ]
+    
     template = SUMMARIZE_PROMPT
     summarize_prompt = PromptTemplate(template=template, input_variables=["summary", "messages"])
-    prompt = summarize_prompt.format(messages=state.messages, summary=state.summary)
-    summary = await acall_reasoner(prompt, config)
+    prompt = summarize_prompt.format(messages=filtered_messages, summary=existing_summary)
+
+    summary = await acall_reasoner(prompt, {**config, "tags": ["langsmith:nostream"]})
+    summary_message = SystemMessage(name="summary", content=summary.content)
     # Delete all but the 2 most recent messages
-    delete_messages = [RemoveMessage(id=m.id) for m in state.messages[:-2] if m.id is not None]
+    # delete_messages = [RemoveMessage(id=m.id) for m in filtered_messages[:-2] if m.id is not None]
+    keep_ids = set()
+    if len(filtered_messages) >= 2:
+        keep_ids = {filtered_messages[-1].id, filtered_messages[-2].id}
+    # Delete all messages except those with IDs to keep
+    delete_messages = [RemoveMessage(id=m.id) for m in state.messages if m.id is not None and m.id not in keep_ids]
 
     return {
-        "summary": summary.content,
-        "messages": delete_messages
+        "messages": [summary_message, *delete_messages]
     }
 
 async def route_question(state: State) -> str:
@@ -132,7 +133,7 @@ async def route_question(state: State) -> str:
     template = QUESTION_ROUTER_PROMPT
     question_router_prompt = PromptTemplate(template=template, input_variables=["question"])
     prompt = question_router_prompt.format(question=state.queries[-1])
-    source = await acall_reasoner(prompt)
+    source = await acall_reasoner(prompt, {"tags": ["langsmith:nostream"]})
     if "vectorstore" not in source.content:
         return "respond"
     else:

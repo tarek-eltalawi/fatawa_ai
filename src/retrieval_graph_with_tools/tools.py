@@ -6,7 +6,7 @@ from src.utilities.retrieval import aretrieve_documents
 from src.utilities.utils import sources_in_markdown
 from typing import Any, List, Callable
 
-async def retrieve(query: str, is_arabic: bool, config: RunnableConfig):
+async def retrieve_islamic_docs(query: str, is_arabic: bool, config: RunnableConfig):
     """
     Fetches Islamic related documents from a vectorDB.
     Should be used for questions on Islamic jurisprudence, fiqh, Islamic law, any permissibility questions, and any questions related to the Quran and Sunnah.
@@ -23,4 +23,4 @@ async def retrieve(query: str, is_arabic: bool, config: RunnableConfig):
         "sources": sources_in_markdown(result["sources"], is_arabic)
     }
 
-TOOLS: List[Callable[..., Any]] = [retrieve]
+TOOLS: List[Callable[..., Any]] = [retrieve_islamic_docs]

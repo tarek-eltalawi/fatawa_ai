@@ -46,18 +46,6 @@ Generate search queries to retrieve documents that may help answer the user's qu
 
 """
 
-QUERY_SYSTEM_PROMPT_FOR_REASONER = """
-1. Identify if the question is a follow up question or not.
-2. If it is a follow up question, use the previous queries to generate new queries. Otherwise, generate new queries based on the user's question.
-3. Identify the question asked by the user is written in Arabic or not
-4. return a dict with the following format: {{"query": "<the generated query>","is_arabic": True/False}}
-
-Previously, you made the following queries:
-<previous_queries/>
-{queries}
-</previous_queries>
-"""
-
 QUESTION_ROUTER_PROMPT = """
 You are an expert at routing a user question to a vectorstore or no source required. \n
 Use the vectorstore for questions on Islamic jurisprudence, fiqh, Islamic law, any permissibility questions, and any questions related to the Quran and Sunnah. \n
@@ -67,15 +55,27 @@ Return a single word string and no premable or explanation. \n
 Question to route: {question}"""
 
 SUMMARIZE_PROMPT = """
-Using the user's past interactions, you can create a summary of the conversation.
-If a summary already exists then extend it by taking into account the new messages
-If it's empty then create a new summary of the conversation
+You are creating or updating a conversation summary that maintains critical context for an AI assistant.
+
+IMPORTANT RULES:
+1. NEVER remove information from an existing summary - this context is critical
+2. If new messages don't add value, keep the existing summary unchanged
+3. If the same question is asked again, note this pattern but preserve all previous context
+4. You may condense redundant information to save tokens, but never delete important facts
+5. Prioritize preserving user preferences, specific questions, and key information
+
+Instructions:
+- If summary is empty: Create a comprehensive new summary
+- If summary exists: Extend it with new relevant information
+- If detecting repetition: Note the pattern but don't remove existing context
 
 These are the new messages between the user and the system:
 {messages}
 
-This is summary of the conversation to date: 
+This is the current summary of the conversation to date: 
 {summary}
+
+Your updated summary should maintain or extend the existing context, never reduce it.
 """
 
 RESPONDER_PROMPT = """

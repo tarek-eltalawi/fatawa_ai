@@ -17,7 +17,7 @@ class SearchQuery(BaseModel):
 tool_calling_llm = ChatOpenAI(
     temperature=TEMPERATURE,
     # model=TOOL_CALLING_MODEL,
-    model="google/gemini-2.0-flash-lite-preview-02-05:free",
+    model="google/gemini-2.0-flash-exp:free",
     api_key=SecretStr(str(OPENROUTER_API_KEY)),
     base_url=OPENROUTER_API_BASE
 )

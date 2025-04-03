@@ -1,11 +1,11 @@
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, List
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage, BaseMessage
 from src.retrieval_graph_with_tools.models import (acall_generate_query, acall_model_with_tools, acall_reasoner)
 from src.retrieval_graph_with_tools.tools import TOOLS
 from src.utilities.state import State
@@ -31,22 +31,18 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
         - The function uses the configuration to set up the prompt and model for query generation.
     """
     
-    messages = state.messages
-    # If there is summary, then we add it
-    if state.summary:    
-        messages = [SystemMessage(content=state.summary), *state.messages]
-
     # It's the first user question. We will use the input directly to search.
-    query = messages[-1].content
-    if len(messages) > 1:
+    query = state.messages[-1].content
+    config_with_nostream = {**config, "tags": ["langsmith:nostream"]}
+    if len(state.messages) > 1:
         prompt = ChatPromptTemplate.from_messages([
             ("system", QUERY_SYSTEM_PROMPT),
             ("placeholder", "{messages}")])
 
-        message_value = await prompt.ainvoke({"messages": messages, "queries": "\n- ".join(state.queries)},config)
+        message_value = await prompt.ainvoke({"messages": state.messages, "queries": "\n- ".join(state.queries)},config_with_nostream)
 
         # Generate a query from the user's messages
-        query = await acall_generate_query(message_value, config)
+        query = await acall_generate_query(message_value, config_with_nostream)
     
     return {
         "queries": [query]
@@ -63,20 +59,14 @@ async def answer(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
         Dict containing the generated response
     """
 
-    messages = state.messages
     last_message = state.messages[-1]
-
-    # If there is summary, then we add it
-    if state.summary:    
-        messages = [SystemMessage(content=state.summary), *state.messages]
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", RESPONSE_SYSTEM_PROMPT_WITH_TOOLS),
         ("placeholder", "{messages}")])
 
-    message_value = await prompt.ainvoke({"messages": messages}, config)
+    message_value = await prompt.ainvoke({"messages": state.messages}, config)
     # TODO: implement a step to prevent loops
-    if last_message and last_message.type == "tool" and last_message.name == "retrieve":
+    if last_message and last_message.type == "tool" and last_message.name == "retrieve_islamic_docs":
         response = await acall_reasoner(message_value, config)
     else:
         response = await acall_model_with_tools(message_value, config)
@@ -86,28 +76,25 @@ async def answer(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
 
 async def summarize(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
     """Summarize the conversation."""
-    filtered_messages = [
-        msg for msg in state.messages 
-        if isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)
-    ]
+    summary_messages = [m for m in state.messages if getattr(m, 'name', None) == "summary"]
+    existing_summary = summary_messages[0].content if summary_messages else ""
+    
+    filtered_messages = get_filtered_messages(state)
     template = SUMMARIZE_PROMPT
     summarize_prompt = PromptTemplate(template=template, input_variables=["summary", "messages"])
-    prompt = summarize_prompt.format(messages=filtered_messages, summary=state.summary)
-    summary = await acall_reasoner(prompt, config)
+    prompt = summarize_prompt.format(messages=filtered_messages, summary=existing_summary)
+    summary = await acall_reasoner(prompt, {**config, "tags": ["langsmith:nostream"]})
+    summary_message = SystemMessage(name="summary", content=summary.content)
     # Delete all but the 2 most recent messages
     # Get the IDs of the last human and AI messages from filtered_messages
     keep_ids = set()
     if len(filtered_messages) >= 2:
         keep_ids = {filtered_messages[-1].id, filtered_messages[-2].id}
     # Delete all messages except those with IDs to keep
-    delete_messages = [
-        RemoveMessage(id=m.id) for m in state.messages 
-        if m.id is not None and m.id not in keep_ids
-    ]
+    delete_messages = [RemoveMessage(id=m.id) for m in state.messages if m.id is not None and m.id not in keep_ids]
 
     return {
-        "summary": summary.content,
-        "messages": delete_messages
+        "messages": [summary_message, *delete_messages]
     }
 
 def should_use_tools_or_summarize_or_end(state: State) -> Literal["END", "tools", "summarize"]:
@@ -130,7 +117,13 @@ def should_use_tools_or_summarize_or_end(state: State) -> Literal["END", "tools"
 
     if last_message.tool_calls:        
         return "tools"
-    return "summarize" if len(state.messages) > 30 else "END"
+    return "summarize" if len(get_filtered_messages(state)) > 3 else "END"
+
+def get_filtered_messages(state: State) -> List[BaseMessage]:
+    return [
+        msg for msg in state.messages 
+        if (isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)) and msg.content is not ""
+    ]
 
 memory = MemorySaver()
 graph_builder = StateGraph(State)

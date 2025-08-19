@@ -99,7 +99,7 @@ async def summarize_node(state: State, *, config: RunnableConfig) -> Dict[str, A
     existing_summary = summary_messages[0].content if summary_messages else ""
     filtered_messages = [
         msg for msg in state.messages 
-        if (isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)) and msg.content is not ""
+        if (isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)) and msg.content != ""
     ]
     
     template = SUMMARIZE_PROMPT
@@ -149,7 +149,7 @@ async def should_summarize(state: State) -> str:
     Returns:
         bool: True if summarization is needed, False otherwise
     """
-    return "summarize" if len(state.messages) > 3 else "END"
+    return "summarize" if len(state.messages) > 30 else "END"
 
 memory = MemorySaver()
 graph_builder = StateGraph(State)

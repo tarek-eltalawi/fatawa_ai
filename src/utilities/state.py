@@ -22,7 +22,3 @@ class State:
     queries: Annotated[list[str], add_queries] = field(default_factory=list)
     context: str = field(default_factory=str)
     sources: List[str] = field(default_factory=list)
-    language: str = field(default_factory=str)
-    provider: str = field(default_factory=str)
-    summary: str = field(default_factory=str)
-    is_arabic: bool = field(default_factory=bool)

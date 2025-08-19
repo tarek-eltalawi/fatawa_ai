@@ -5,9 +5,8 @@ from src.retrieval_graph import graph
 from src.utilities.state import State
 import asyncio
 
-async def ask_bot(question: str, lang: str = "en", config: RunnableConfig | None = RunnableConfig()) -> None:
-    summary = graph.get_state(config or RunnableConfig()).values.get('summary', "")
-    state = State(messages=[HumanMessage(content=question)], language=lang, summary=summary)
+async def ask_bot(question: str, config: RunnableConfig | None = RunnableConfig()) -> None:
+    state = State(messages=[HumanMessage(content=question)])
 
     node_to_stream = 'generate_answer'
     sources = []
@@ -26,18 +25,11 @@ async def ask_bot(question: str, lang: str = "en", config: RunnableConfig | None
 if __name__ == "__main__":
     thread_id = "test__" + uuid.uuid4().hex
     config = RunnableConfig(configurable={"thread_id": thread_id})
-    # question = "can i greet christians?"
-    # asyncio.run(ask_bot(question=question, config=config))
-    # question = "can i listen to music?"
-    # asyncio.run(ask_bot(question=question, config=config))
-    # question = "what about jews?"
-    # asyncio.run(ask_bot(question=question, config=config))
-    # question = "what about buddhists?"
-    # asyncio.run(ask_bot(question=question, config=config))
 
-    question = "هل يجوز قراءة القرآن بدون وضوء؟"
-    asyncio.run(ask_bot(question=question, config=config, lang="ar"))
-    # question = "ما حكم إخراج زكاة المال في شكل إفطارٍ للصائمين؟"
-    # asyncio.run(ask_bot(question=question, config=config, lang="ar"))
-    # question = "ممكن أسمع موسيقى ؟"
-    # asyncio.run(ask_bot(question=question, config=config, lang="ar"))
+    questions = [
+        "How often should I call my relatives in Islam?",
+        "هل يجوز قراءة القرآن بدون وضوء؟",
+        "Who won the last world cup?"
+    ]
+   
+    # asyncio.run(ask_bot(question=question, config=config))

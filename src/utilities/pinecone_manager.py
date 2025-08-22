@@ -126,7 +126,7 @@ class PineconeManager:
         try:
             loop = asyncio.get_event_loop()
             result = await loop.run_in_executor(None, index.fetch, vector_ids, self.namespace)
-            return result.get('vectors', {})
+            return result.vectors
         except Exception as e:
             print(f"Error batch fetching vectors: {str(e)}")
             return {}

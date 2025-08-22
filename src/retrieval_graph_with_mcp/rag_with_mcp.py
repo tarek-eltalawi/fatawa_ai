@@ -5,7 +5,6 @@ from langgraph.graph import StateGraph, START, END
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.prebuilt import ToolNode
 from langchain_core.messages import AIMessage, SystemMessage, RemoveMessage, BaseMessage, HumanMessage
-from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
 from src.retrieval_graph_with_mcp.models import (acall_generate_query, acall_model_with_mcp, acall_reasoner)
@@ -149,7 +148,6 @@ async def mcp_tool_executor(state: State, config: RunnableConfig = None):
 
 @asynccontextmanager
 async def graph():
-    memory = MemorySaver()
     graph_builder = StateGraph(State)
     
     # Add nodes
@@ -174,7 +172,7 @@ async def graph():
     graph_builder.add_edge("summarize", END)
     
     # Properly implement the async context manager pattern
-    compiled_graph = graph_builder.compile(checkpointer=memory)
+    compiled_graph = graph_builder.compile()
     try:
         yield compiled_graph
     finally:

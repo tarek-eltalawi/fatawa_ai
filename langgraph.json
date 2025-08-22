@@ -5,9 +5,7 @@
   ],
   "graphs": {
     "rag": "./src/retrieval_graph/rag.py:graph",
-    "rag_with_tools": "./src/retrieval_graph_with_tools/rag_with_tools.py:graph",
-    "rag_with_mcp": "./src/retrieval_graph_with_mcp/rag_with_mcp.py:graph",
-    "react_agent_with_mcp": "./src/retrieval_graph_with_mcp/react_agent_with_mcp.py:graph"
+    "rag_with_tools": "./src/retrieval_graph_with_tools/rag_with_tools.py:graph"
   },
   "env": ".env"
 }

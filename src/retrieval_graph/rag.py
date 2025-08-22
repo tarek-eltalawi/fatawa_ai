@@ -2,14 +2,13 @@ from typing import Any, Dict
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage, RemoveMessage
-from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
-from src.retrieval_graph.models import (language_detector, acall_reasoner, query_generator)
+from src.retrieval_graph.models import (language_detector, ainvoke, acall_generate_query)
 from src.utilities.retrieval import aretrieve_documents
 from src.utilities.state import State
 from src.utilities.utils import sources_in_markdown
-from src.utilities.prompts import (QUESTION_ROUTER_PROMPT, RESPONDER_PROMPT, 
+from src.utilities.prompts import (QUESTION_ROUTER_PROMPT, RESPONDER_PROMPT, QUERY_SYSTEM_PROMPT,
     RESPONSE_SYSTEM_PROMPT, SUMMARIZE_PROMPT)
 
 async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -31,14 +30,22 @@ async def generate_query(state: State, *, config: RunnableConfig) -> Dict[str, A
         - For subsequent messages, it uses a language model to generate a refined query.
         - The function uses the configuration to set up the prompt and model for query generation.
     """
-    question = state.messages[-1].content
-    response = await query_generator.ainvoke({
-        "queries": "\n- ".join(state.queries),
-        "question": question,
-        "messages": state.messages}, config)
+    
+    # It's the first user question. We will use the input directly to search.
+    query = state.messages[-1].content
+    config_with_nostream = {**config, "tags": ["langsmith:nostream"]}
+    if len(state.messages) > 1:
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", QUERY_SYSTEM_PROMPT),
+            ("placeholder", "{messages}")])
+
+        message_value = await prompt.ainvoke({"messages": state.messages, "queries": "\n- ".join(state.queries)},config_with_nostream)
+
+        # Generate a query from the user's messages
+        query = await acall_generate_query(message_value, config_with_nostream)
     
     return {
-        "queries": [response.content]
+        "queries": [query]
     }
 
 async def retrieval_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
@@ -79,7 +86,7 @@ async def model_node(state: State, *, config: RunnableConfig) -> Dict[str, Any]:
         "context": state.context,
         "sources": state.sources}, config)
 
-    response = await acall_reasoner(message_value, config)
+    response = await ainvoke(message_value, config)
     return {
         "messages": [AIMessage(id=response.id, content=response.content)]
     }
@@ -88,7 +95,7 @@ async def respond_node(state: State, *, config: RunnableConfig) -> Dict[str, Any
     """Respond to the user's question."""
     question = state.queries[-1]
     system_prompt = RESPONDER_PROMPT
-    response = await acall_reasoner([SystemMessage(content=system_prompt), HumanMessage(content=question)], config)
+    response = await ainvoke([SystemMessage(content=system_prompt), HumanMessage(content=question)], config)
     return {
         "messages": [AIMessage(id=response.id, content=response.content)]
     }
@@ -106,7 +113,7 @@ async def summarize_node(state: State, *, config: RunnableConfig) -> Dict[str, A
     summarize_prompt = PromptTemplate(template=template, input_variables=["summary", "messages"])
     prompt = summarize_prompt.format(messages=filtered_messages, summary=existing_summary)
 
-    summary = await acall_reasoner(prompt, {**config, "tags": ["langsmith:nostream"]})
+    summary = await ainvoke(prompt, {**config, "tags": ["langsmith:nostream"]})
     summary_message = SystemMessage(name="summary", content=summary.content)
     # Delete all but the 2 most recent messages
     # delete_messages = [RemoveMessage(id=m.id) for m in filtered_messages[:-2] if m.id is not None]
@@ -133,7 +140,7 @@ async def route_question(state: State) -> str:
     template = QUESTION_ROUTER_PROMPT
     question_router_prompt = PromptTemplate(template=template, input_variables=["question"])
     prompt = question_router_prompt.format(question=state.queries[-1])
-    source = await acall_reasoner(prompt, {"tags": ["langsmith:nostream"]})
+    source = await ainvoke(prompt, {"tags": ["langsmith:nostream"]})
     if "vectorstore" not in source.content:
         return "respond"
     else:
@@ -151,7 +158,6 @@ async def should_summarize(state: State) -> str:
     """
     return "summarize" if len(state.messages) > 30 else "END"
 
-memory = MemorySaver()
 graph_builder = StateGraph(State)
     
 # Add nodes
@@ -189,4 +195,4 @@ graph_builder.add_conditional_edges(
     },
 )
 graph_builder.add_edge("summarize", END)
-graph = graph_builder.compile(checkpointer=memory)
+graph = graph_builder.compile()

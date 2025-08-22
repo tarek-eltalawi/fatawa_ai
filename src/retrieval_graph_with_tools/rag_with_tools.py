@@ -2,7 +2,6 @@ from typing import Any, Dict, Literal, List
 from langchain.prompts import PromptTemplate
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
-from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.runnables import RunnableConfig
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, RemoveMessage, BaseMessage
@@ -125,7 +124,6 @@ def get_filtered_messages(state: State) -> List[BaseMessage]:
         if (isinstance(msg, HumanMessage) or isinstance(msg, AIMessage)) and msg.content is not ""
     ]
 
-memory = MemorySaver()
 graph_builder = StateGraph(State)
     
 # Add nodes
@@ -148,4 +146,4 @@ graph_builder.add_conditional_edges(
 )
 graph_builder.add_edge("tools", "answer")
 graph_builder.add_edge("summarize", END)
-graph = graph_builder.compile(checkpointer=memory)
+graph = graph_builder.compile()

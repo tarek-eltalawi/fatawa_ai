@@ -12,7 +12,7 @@ from langgraph.graph import StateGraph, START, END
 from src.utilities.prompts import QUESTION_ROUTER_PROMPT
 from src.utilities.retrieval import retrieve_documents
 from src.utilities.utils import sources_in_markdown
-from retrieval_graph.models import (acall_reasoner, retrieval_grader,hallucination_grader, answer_grader, 
+from retrieval_graph.models import (ainvoke, retrieval_grader,hallucination_grader, answer_grader, 
     question_rewriter, local_llm)
 
 # Define the function that calls the model
@@ -157,7 +157,7 @@ async def route_question(state) -> str:
     template = QUESTION_ROUTER_PROMPT
     question_router_prompt = PromptTemplate(template=template, input_variables=["question"])
     prompt = question_router_prompt.format(question=state.queries[-1])
-    source = await acall_reasoner(prompt)
+    source = await ainvoke(prompt)
     if source.content == "vectorstore":
         return "retrieve"
     else:

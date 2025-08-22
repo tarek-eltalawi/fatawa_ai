@@ -30,8 +30,6 @@ reasoner_llm = ChatOpenAI(
     base_url=OPENROUTER_API_BASE
 )
 
-local_llm = ChatOllama(model=QWQ_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-
 async def acall_generate_query(message: Any, config: RunnableConfig = None):
     """
     Generate a query from a question.
@@ -43,8 +41,7 @@ async def acall_generate_query(message: Any, config: RunnableConfig = None):
     Returns:
         the generated query
     """
-    llm = tool_calling_llm if LOCAL_TOOL_CALLING_MODEL == "" else ChatOllama(model=LOCAL_TOOL_CALLING_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-    model = llm.with_structured_output(SearchQuery)
+    model = tool_calling_llm.with_structured_output(SearchQuery)
     generated = cast(SearchQuery, await model.ainvoke(message, config))
     return generated.query
 
@@ -59,8 +56,7 @@ async def acall_reasoner(messages: Any, config: RunnableConfig = None):
     Returns:
         the generated response
     """
-    llm = reasoner_llm if LOCAL_REASONER_MODEL == "" else ChatOllama(model=LOCAL_REASONER_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-    return await llm.ainvoke(messages, config)
+    return await reasoner_llm.ainvoke(messages, config)
 
 async def acall_model_with_tools(messages: Any, config: RunnableConfig = None, tools: List[Any] = TOOLS):
     """
@@ -73,7 +69,5 @@ async def acall_model_with_tools(messages: Any, config: RunnableConfig = None, t
     Returns:
         the generated response
     """
-    
-    llm = tool_calling_llm if LOCAL_TOOL_CALLING_MODEL == "" else ChatOllama(model=LOCAL_TOOL_CALLING_MODEL, temperature=TEMPERATURE, base_url=OLLAMA_BASE_URL)
-    bound_llm = llm.bind_tools(tools)
+    bound_llm = tool_calling_llm.bind_tools(tools)
     return await bound_llm.ainvoke(messages, config)
